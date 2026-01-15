@@ -1,31 +1,93 @@
-import React, { useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Platform,
+} from "react-native";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import Header from "src/components/Header/header";
 import BottomNav, {
   type BottomNavItem,
 } from "src/components/BottomNav/bottom_nav";
-import { clientes, pedidos } from "src/types";
+import {
+  deleteCliente,
+  getClienteById,
+  pedidos,
+  type Cliente,
+} from "src/types";
 import CustomButton from "src/components/Buttons/button";
 
 export default function ClientDetail() {
+  // Usamos el router para movernos entre pantallas
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>(); // Lee /client/[id]
-  const clientId = Number(params.id); // Convierte param a número
+  // Leemos el id que llega desde la URL
+  const params = useLocalSearchParams<{ id?: string }>();
+  const clientId = Number(params.id);
+  const [client, setClient] = useState<Cliente | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Busca cliente solo cuando cambia el id
-  const client = useMemo(
-    () => clientes.find((c) => c.id === clientId),
-    [clientId]
-  );
+  // Cargamos el cliente cuando entramos o volvemos a esta pantalla
+  const loadClient = useCallback(() => {
+    let active = true;
+    setLoading(true);
+    getClienteById(clientId).then((data) => {
+      if (active) {
+        setClient(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [clientId]);
 
-  // Filtra pedidos del cliente seleccionado
+  useFocusEffect(loadClient);
+
+  // Filtramos los pedidos usando el `clientId` que leímos de la URL
   const pedidosCliente = useMemo(
     () => pedidos.filter((p) => p.clienteId === clientId),
     [clientId]
   );
 
-  // Config de navegación inferior; marca Clientes como activo
+  // Confirmamos y borramos el cliente
+  const handleDelete = () => {
+    const confirmDelete = async () => {
+      const deleted = await deleteCliente(clientId);
+      if (deleted) {
+        router.replace("/client");
+        return;
+      }
+      Alert.alert("Error", "No se pudo eliminar el cliente.");
+    };
+
+    // Usamos una alerta distinta según si estamos en web o móvil
+    if (Platform.OS === "web") {
+      // Mostramos un confirm en web
+      const ok = window.confirm(
+        "Eliminar cliente\n\nEsta acción no se puede deshacer."
+      );
+      if (ok) {
+        void confirmDelete();
+      }
+      return;
+    }
+
+    Alert.alert("Eliminar cliente", "Esta acción no se puede deshacer.", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Eliminar",
+        style: "destructive",
+        onPress: () => {
+          void confirmDelete();
+        },
+      },
+    ]);
+  };
+
+  // Definimos la barra inferior y marcamos Clientes como activo
   const navItems: BottomNavItem[] = [
     {
       icon: "home-outline",
@@ -44,7 +106,19 @@ export default function ClientDetail() {
     { icon: "cube-outline", label: "Inventario" },
   ];
 
-  // Estado vacío: id inexistente
+  // Mostramos un estado de carga mientras buscamos el cliente
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Header name="Cliente" />
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyTitle}>Cargando cliente...</Text>
+        </View>
+        <BottomNav items={navItems} showFab={false} />
+      </View>
+    );
+  }
+
   if (!client) {
     return (
       <View style={styles.container}>
@@ -60,24 +134,26 @@ export default function ClientDetail() {
     );
   }
 
-  // Vista principal con datos del cliente y pedidos
+  // Pintamos la ficha del cliente y sus pedidos
   return (
     <View style={styles.container}>
       <Header name={client.nombre} />
 
-      {/* Botón para ir al formulario de edición */}
+      {/* Dejamos botones para editar o borrar */}
       <View style={styles.actionBar}>
         <CustomButton
           text="Editar cliente"
           onPress={() => router.push(`/client/${client.id}/edit`)}
         />
+        <View style={{ height: 10 }} />
+        <CustomButton text="Eliminar cliente" onPress={handleDelete} />
       </View>
 
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Tarjeta con ficha del cliente */}
+        {/* Mostramos los datos básicos del cliente */}
         <View style={styles.cardPrimary}>
           <Text style={styles.sectionTitle}>Datos del cliente</Text>
           <View style={styles.divider} />
@@ -109,7 +185,7 @@ export default function ClientDetail() {
           </View>
         </View>
 
-        {/* Tarjeta con listado de pedidos */}
+        {/* Mostramos los pedidos del cliente */}
         <View style={styles.cardSecondary}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Últimos pedidos</Text>

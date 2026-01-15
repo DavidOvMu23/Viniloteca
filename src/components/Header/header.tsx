@@ -1,22 +1,23 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 
-// Componente de encabezado que muestra un saludo, la fecha actual y un avatar
+// Componente de encabezado que muestra un saludo, la fecha actual y un avatar de usuario
 interface Props {
   name?: string;
   onAvatarPress?: () => void;
   avatarUri?: string;
 }
 
-// Componente funcional que representa el encabezado
+// Definimos el componente del header
 export default function Header({
   name = "Usuario",
   onAvatarPress,
-  avatarUri = "https://i.pravatar.cc/150?img=12",
+  avatarUri = "https://i.pravatar.cc/150?img=12", // la imagen me la dio el chatGPT
 }: Props) {
-  const today = new Date(); // Fecha actual
+  // Sacamos la fecha de hoy
+  const today = new Date();
 
-  // Formatea fecha en español (esto me lo ha hecho el chat)
+  // Formateamos la fecha en español (esto me lo dio el chatGPT)
   const formatted = today.toLocaleDateString("es-ES", {
     day: "2-digit",
     month: "long",
@@ -30,7 +31,7 @@ export default function Header({
         <Text style={styles.date}>{formatted}</Text>
       </View>
 
-      {/* Avatar pulsable; dispara onAvatarPress si se pasa */}
+      {/* Dejamos el avatar como botón si pulsamos en él */}
       <TouchableOpacity
         style={styles.avatarContainer}
         onPress={onAvatarPress}

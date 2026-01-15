@@ -2,6 +2,7 @@ import React from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 
+//definimos las propiedades que puede recibir el botón
 interface GoogleButtonProps {
   text?: string;
 }
@@ -9,7 +10,7 @@ interface GoogleButtonProps {
 const GoogleButton = ({ text = "Continúa con Google" }: GoogleButtonProps) => {
   return (
     <TouchableOpacity style={styles.button}>
-      {/* Icono + texto alineados en fila */}
+      {/* Ponemos el icono y el texto alineados */}
       <FontAwesome name="google" size={20} color="#EA4335" />
       <Text style={styles.text}>{text}</Text>
     </TouchableOpacity>

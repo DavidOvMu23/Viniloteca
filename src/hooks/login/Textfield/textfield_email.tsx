@@ -2,19 +2,20 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
 
-// Componente de campo de texto para la entrada de correo electrónico
+// Creamos un campo de texto para el email
 interface TextfieldEmailProps {
   value: string;
   onChangeText: (text: string) => void;
 }
 
-// Componente funcional que representa un campo de texto para el correo electrónico
+// Definimos el componente que pinta el input de email
 export const TextfieldEmail = ({
   value,
   onChangeText,
 }: TextfieldEmailProps) => {
   return (
     <View style={styles.container}>
+      {/* Usamos value y onChangeText que llegan desde la pantalla */}
       <TextInput
         mode="outlined"
         placeholder="Email"
@@ -39,7 +40,7 @@ export const TextfieldEmail = ({
   );
 };
 
-// Estilos para el componente TextfieldEmail
+// Definimos los estilos del input
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,

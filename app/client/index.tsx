@@ -1,2 +1,3 @@
-// Reexporta el componente principal para que la ruta /client funcione
+// Exportamos el componente principal de clientes para que la ruta funcione
+// Explicamos esto porque Expo Router lo busca aquí y si no, no lo detecta
 export { default } from "./client";

@@ -9,14 +9,18 @@ import Button from "../src/components/Buttons/button";
 import GoogleButton from "../src/components/Buttons/google_button";
 
 export default function Login() {
-  const router = useRouter(); // Para navegar tras iniciar sesión
-  const [email, setEmail] = useState(""); // Estado controlado del email
-  const [password, setPassword] = useState(""); // Estado controlado del password
-  const isLoginDisabled = !email.trim() || !password.trim(); // Valida campos vacíos
+  // Usamos el router para movernos después del login
+  const router = useRouter();
+  // Guardamos el email que llega desde el input
+  const [email, setEmail] = useState("");
+  // Guardamos la contraseña que llega desde el input
+  const [password, setPassword] = useState("");
+  // Calculamos si el botón debe estar desactivado según el estado
+  const isLoginDisabled = !email.trim() || !password.trim();
 
   return (
     <View style={styles.container}>
-      {/* Logotipo/ícono principal */}
+      {/* Mostramos el ícono principal de la pantalla */}
       <LockIcon />
 
       <Text style={styles.title}>Bienvenido</Text>
@@ -27,7 +31,7 @@ export default function Login() {
       <View style={styles.formContainer}>
         <Text style={styles.label}>Correo Electrónico</Text>
 
-        {/* Campo controlado: email */}
+        {/* Conectamos el input con el estado `email` */}
         <TextfieldEmail value={email} onChangeText={(text) => setEmail(text)} />
 
         <View style={styles.passwordLabelContainer}>
@@ -35,30 +39,30 @@ export default function Login() {
           <TextButton text="¿Olvidaste tu contraseña?" />
         </View>
 
-        {/* Campo controlado: password */}
+        {/* Conectamos el input con el estado `password` */}
         <TextfieldPassword
           value={password}
           onChangeText={(text) => setPassword(text)}
         />
 
-        {/* Botón principal; bloqueado si faltan datos */}
+        {/* Activamos el botón solo si `email` y `password` tienen contenido */}
         <Button
           text="Iniciar Sesión"
           disabled={isLoginDisabled}
           onPress={() => router.replace("/home")}
         />
 
-        {/* Separador visual */}
+        {/* Ponemos un separador para separar el login normal del de Google */}
         <View style={[styles.dividerContainer, { marginTop: 30 }]}>
           <View style={styles.line} />
           <Text style={styles.dividerText}>O continúa con</Text>
           <View style={styles.line} />
         </View>
 
-        {/* Login alternativo */}
+        {/* Mostramos el botón de login con Google */}
         <GoogleButton text="Google" />
 
-        {/* CTA de registro */}
+        {/* Mostramos el botón de texto para registrarse */}
         <View style={styles.signupContainer}>
           <Text style={styles.signupText}>¿No tienes una cuenta?</Text>
           <TextButton text="Regístrate ahora" />
@@ -70,10 +74,10 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 1, // Usamos flex para ocupar toda la pantalla
     backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: "center", // Centramos en horizontal
+    justifyContent: "center", // Centramos en vertical y horizontal
   },
   title: {
     fontSize: 20,
@@ -98,11 +102,11 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   dividerContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Usamos fila para alinear elementos
     alignItems: "center",
     marginTop: 16,
     marginBottom: 16,
-    gap: 12,
+    gap: 12, // Dejamos espacio entre elementos
   },
   line: {
     flex: 1,
@@ -114,8 +118,8 @@ const styles = StyleSheet.create({
     color: "#999",
   },
   passwordLabelContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "row", // Usamos fila para alinear textos
+    justifyContent: "space-between", // Separamos los textos
     alignItems: "center",
     marginBottom: 8,
   },

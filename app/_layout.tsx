@@ -1,7 +1,8 @@
 import React from "react";
 import { Stack } from "expo-router";
 
-// envuelve todas las rutas y oculta la cabecera nativa
+// Envolvemos la app para que Expo Router maneje las pantallas
 export default function Layout() {
-  return <Stack screenOptions={{ headerShown: false }} />; // Stack gestiona las pantallas detectadas en app/
+  // Usamos un stack para navegar entre pantallas
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

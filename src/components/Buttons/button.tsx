@@ -8,22 +8,22 @@ interface ButtonProps {
   onPress?: () => void;
 }
 
-/* aquí definimos el componente Button y sus propiedades */
-/* definimos los parametros que el componente puede recibir */
+/* Definimos el componente y recibimos los datos que nos pasan por props */
 const Button = ({ text, disabled = false, onPress }: ButtonProps) => {
   return (
-    /* TouchableOpacity es un componente que se puede presionar */
+    // Usamos TouchableOpacity para que se pueda pulsar
     <TouchableOpacity
       style={[styles.button, disabled && styles.disabledButton]}
       disabled={disabled}
       onPress={onPress}
     >
+      {/* Ponemos el texto que llega desde el prop `text` */}
       <Text style={[styles.text, disabled && styles.disabledText]}>{text}</Text>
     </TouchableOpacity>
   );
 };
 
-/* aquí definimos los estilos para el botón */
+/* Definimos los estilos del botón */
 const styles = StyleSheet.create({
   button: {
     backgroundColor: "#ddbd30ff",

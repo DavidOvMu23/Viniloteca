@@ -1,50 +1,93 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { TextInput } from "react-native-paper";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Header from "src/components/Header/header";
 import CustomButton from "src/components/Buttons/button";
-import { clientes } from "src/types";
+import { getClienteById, updateCliente } from "src/types";
 
 export default function EditClient() {
+  // Usamos el router para volver o salir
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>(); // Lee el id de la URL
-  const clientId = Number(params.id); // Convierte el id
+  // Leemos el id que llega en la URL
+  const params = useLocalSearchParams<{ id?: string }>();
+  const clientId = Number(params.id);
 
-  // Memoiza la búsqueda del cliente
-  const client = useMemo(
-    () => clientes.find((c) => c.id === clientId),
-    [clientId]
-  );
+  // Guardamos el nombre para el título
+  const [clientName, setClientName] = useState<string | null>(null);
+  // Usamos esto para mostrar un estado de “no encontrado”
+  const [notFound, setNotFound] = useState(false);
 
-  // Estados controlados del formulario, precargados con los datos actuales
-  const [nombre, setNombre] = useState(client?.nombre ?? "");
-  const [email, setEmail] = useState(client?.email ?? "");
-  const [telefono, setTelefono] = useState(client?.telefono ?? "");
-  const [nif, setNif] = useState(client?.nifCif ?? "");
+  // Guardamos los estados del formulario que llegan de los inputs
+  const [nombre, setNombre] = useState("");
+  const [email, setEmail] = useState("");
+  const [telefono, setTelefono] = useState("");
+  const [nif, setNif] = useState("");
 
-  // Simula guardado: imprime y vuelve atrás
+  // Cargamos los datos del cliente para rellenar el formulario
+  const loadClient = useCallback(async () => {
+    const client = await getClienteById(clientId);
+    if (!client) {
+      setClientName(null);
+      setNotFound(true);
+      return;
+    }
+    setNotFound(false);
+    setClientName(client.nombre);
+    setNombre(client.nombre ?? "");
+    setEmail(client.email ?? "");
+    setTelefono(client.telefono ?? "");
+    setNif(client.nifCif ?? "");
+  }, [clientId]);
+
+  // Volvemos a cargar los datos si cambia el id
+  useEffect(() => {
+    if (Number.isNaN(clientId)) {
+      setClientName(null);
+      setNotFound(true);
+      return;
+    }
+    void loadClient();
+  }, [clientId, loadClient]);
+
+  // Guardamos cambios y volvemos atrás
   const handleSave = () => {
-    console.log("Guardar cliente", {
-      id: clientId,
-      nombre,
-      email,
-      telefono,
-      nif,
+    updateCliente(clientId, {
+      nombre: nombre.trim(),
+      email: email.trim() || undefined,
+      telefono: telefono.trim() || undefined,
+      nifCif: nif.trim() || undefined,
+    }).then(() => {
+      router.back();
     });
-    router.back();
   };
+
+  if (notFound) {
+    return (
+      <View style={styles.container}>
+        <Header name="Editar cliente" />
+        <View style={styles.notFound}>
+          <Text style={styles.notFoundTitle}>Cliente no encontrado</Text>
+          <Text style={styles.notFoundText}>
+            Vuelve a la lista y selecciona otro cliente.
+          </Text>
+          <View style={{ height: 12 }} />
+          <CustomButton text="Volver" onPress={() => router.back()} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <Header name={`Editar ${client?.nombre ?? "cliente"}`} />
+      <Header name={`Editar ${clientName ?? "cliente"}`} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Datos del cliente</Text>
         <Text style={styles.subtitle}>
           Actualiza los campos y guarda para aplicar los cambios.
         </Text>
 
-        {/* Campo: nombre */}
+        {/* Editamos el nombre y lo guardamos en `nombre` */}
         <TextInput
           mode="outlined"
           label="Nombre"
@@ -55,7 +98,7 @@ export default function EditClient() {
           left={<TextInput.Icon icon="account-outline" color="#6b7280" />}
         />
 
-        {/* Campo: email */}
+        {/* Editamos el email y lo guardamos en `email` */}
         <TextInput
           mode="outlined"
           label="Email"
@@ -67,7 +110,7 @@ export default function EditClient() {
           left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
         />
 
-        {/* Campo: teléfono */}
+        {/* Editamos el teléfono y lo guardamos en `telefono` */}
         <TextInput
           mode="outlined"
           label="Teléfono"
@@ -79,7 +122,7 @@ export default function EditClient() {
           left={<TextInput.Icon icon="phone-outline" color="#6b7280" />}
         />
 
-        {/* Campo: NIF/CIF */}
+        {/* Editamos el NIF/CIF y lo guardamos en `nif` */}
         <TextInput
           mode="outlined"
           label="NIF/CIF"
@@ -95,7 +138,7 @@ export default function EditClient() {
           }
         />
 
-        {/* Acciones */}
+        {/* Dejamos las acciones de guardar o cancelar */}
         <View style={styles.actions}>
           <CustomButton text="Guardar cambios" onPress={handleSave} />
           <View style={{ height: 10 }} />
@@ -134,5 +177,22 @@ const styles = StyleSheet.create({
   },
   actions: {
     marginTop: 10,
+  },
+  notFound: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+  },
+  notFoundTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  notFoundText: {
+    fontSize: 14,
+    color: "#6b7280",
+    marginTop: 6,
+    textAlign: "center",
   },
 });

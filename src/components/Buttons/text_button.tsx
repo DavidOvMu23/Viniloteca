@@ -4,8 +4,9 @@ import {
   Text,
   StyleSheet,
   GestureResponderEvent,
-} from "react-native"; // Botón táctil, texto y tipos de evento
+} from "react-native";
 
+//definimos las propiedades que puede recibir el botón
 interface TextButtonProps {
   text: string;
   onPress?: (event: GestureResponderEvent) => void;
@@ -14,7 +15,7 @@ interface TextButtonProps {
 const TextButton = ({ text, onPress }: TextButtonProps) => {
   return (
     <TouchableOpacity onPress={onPress}>
-      {/* Parece un enlace: solo texto coloreado */}
+      {/* Dejamos el texto con estilo tipo enlace */}
       <Text style={styles.text}>{text}</Text>
     </TouchableOpacity>
   );

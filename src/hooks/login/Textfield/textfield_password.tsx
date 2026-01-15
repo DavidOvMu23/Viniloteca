@@ -2,20 +2,21 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
 
-// Componente de campo de texto para la entrada de contraseña
+// Creamos un campo de texto para la contraseña
 interface TextfieldPasswordProps {
   value: string;
   onChangeText: (text: string) => void;
 }
 
-// Componente funcional que representa un campo de texto para la contraseña
+// Definimos el componente que pinta el input de contraseña
 export const TextfieldPassword = ({
   value,
   onChangeText,
 }: TextfieldPasswordProps) => {
   return (
-    // Vista contenedora para el campo de texto de la contraseña
+    // Dejamos el contenedor del input
     <View style={styles.container}>
+      {/* Usamos value y onChangeText que llegan desde la pantalla */}
       <TextInput
         mode="outlined"
         placeholder="Contraseña"
@@ -40,7 +41,7 @@ export const TextfieldPassword = ({
   );
 };
 
-// Estilos para el componente TextfieldPassword
+// Definimos los estilos del input
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,

@@ -1,8 +1,11 @@
+// No conseguia hacer el bottom bar como quería y me parecía una completa fumada
+// y no consegua haerlo por que era algo demasiado avanzado, entonces le pedí ayuda al chatGPT
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 
+// Definimos el tipo de cada elemento de la barra inferior
 export type BottomNavItem = {
   icon: React.ComponentProps<typeof Ionicons>["name"];
   label: string;
@@ -11,13 +14,14 @@ export type BottomNavItem = {
   href?: Href;
 };
 
+// Componente de barra de navegación inferior con pestañas y botón flotante
 interface Props {
   items: BottomNavItem[];
   fabIcon?: React.ComponentProps<typeof Ionicons>["name"];
   onFabPress?: () => void;
   showFab?: boolean;
 }
-
+// Componente funcional que representa la barra de navegación inferior
 export default function BottomNav({
   items,
   fabIcon = "add",
@@ -26,7 +30,7 @@ export default function BottomNav({
 }: Props) {
   return (
     <>
-      {/* Botón flotante opcional */}
+      {/* Mostramos el botón flotante si lo necesitamos*/}
       {showFab && (
         <View style={styles.fabContainer}>
           <TouchableOpacity style={styles.fab} onPress={onFabPress}>
@@ -35,10 +39,11 @@ export default function BottomNav({
         </View>
       )}
 
-      {/* Barra inferior con pestañas */}
+      {/* Pintamos la barra inferior con las pestañas */}
       <View style={styles.tabBar}>
         {items.map((item) => {
-          const color = item.active ? "#ffffffff" : "#8f8f8fff"; // Resalta activo
+          // Cambiamos el color si la pestaña está activa
+          const color = item.active ? "#ffffffff" : "#8f8f8fff";
           const content = (
             <View style={styles.tabItem}>
               <Ionicons name={item.icon} size={24} color={color} />
@@ -46,7 +51,7 @@ export default function BottomNav({
             </View>
           );
 
-          // Si hay href usamos Link (navegación declarativa)
+          // Usamos Link si nos pasan href
           if (item.href) {
             return (
               <Link key={item.label} href={item.href} asChild>
@@ -57,7 +62,7 @@ export default function BottomNav({
             );
           }
 
-          // Si no, usamos onPress manual
+          // Usamos onPress manual si no hay href
           return (
             <TouchableOpacity
               key={item.label}

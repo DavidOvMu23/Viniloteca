@@ -1,8 +1,8 @@
-// mockApi.ts
-// Datos ficticios + tipos para simular servicios en una app React Native
+// Empezamos con un mock de datos y tipos para la app
+// Guardamos datos ficticios para simular servicios
 
-// 1. TIPOS BÁSICOS
-// -----------------------------------------------------
+// Definimos tipos básicos
+// Separamos secciones para no perdernos
 
 export type RoleName = "NORMAL" | "ADMIN";
 
@@ -55,7 +55,7 @@ export interface Producto {
   id: number;
   nombre: string;
   descripcion?: string;
-  precioDia: number; // precio por unidad y día
+  precioDia: number; // Guardamos el precio por unidad y día
   activo: boolean;
 }
 
@@ -447,7 +447,7 @@ export const historialEstados: HistorialEstadoPedido[] = [
 const wait = (ms = 400) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms)); // Simula latencia de red
 
-const getClienteById = (id: number) => clientes.find((c) => c.id === id); // Busca cliente por id
+const getClienteByIdLocal = (id: number) => clientes.find((c) => c.id === id); // Busca cliente por id
 
 const getDireccionById = (id?: number) =>
   direccionesCliente.find((d) => d.id === id); // Busca dirección opcional
@@ -458,7 +458,7 @@ const getTallaById = (id: number) => tallasProducto.find((t) => t.id === id)!; /
 
 // Calcula detalle de líneas y totales de un pedido
 const buildPedidoConDetalle = (pedido: Pedido): PedidoConDetalle => {
-  const cliente = getClienteById(pedido.clienteId);
+  const cliente = getClienteByIdLocal(pedido.clienteId);
   if (!cliente) {
     throw new Error(`Cliente ${pedido.clienteId} no encontrado`); // Seguridad básica
   }
@@ -536,7 +536,63 @@ export const getPedidoById = async (
 // Listado de clientes
 export const listClientes = async (): Promise<Cliente[]> => {
   await wait();
-  return clientes;
+  return [...clientes];
+};
+
+export const getClienteById = async (
+  clienteId: number
+): Promise<Cliente | null> => {
+  await wait();
+  return clientes.find((c) => c.id === clienteId) ?? null;
+};
+
+export type NewClienteInput = Omit<Cliente, "id">;
+
+export const createCliente = async (
+  data: NewClienteInput
+): Promise<Cliente> => {
+  await wait();
+  const nextId = clientes.length
+    ? Math.max(...clientes.map((c) => c.id)) + 1
+    : 1;
+  const nuevoCliente: Cliente = {
+    id: nextId,
+    activo: data.activo ?? true,
+    nombre: data.nombre,
+    email: data.email,
+    telefono: data.telefono,
+    nifCif: data.nifCif,
+    notas: data.notas,
+  };
+  clientes.push(nuevoCliente);
+  return nuevoCliente;
+};
+
+export type UpdateClienteInput = Partial<Omit<Cliente, "id">>;
+
+export const updateCliente = async (
+  clienteId: number,
+  data: UpdateClienteInput
+): Promise<Cliente | null> => {
+  await wait();
+  const index = clientes.findIndex((c) => c.id === clienteId);
+  if (index === -1) return null;
+  const current = clientes[index];
+  const updated: Cliente = {
+    ...current,
+    ...data,
+    id: current.id,
+  };
+  clientes[index] = updated;
+  return updated;
+};
+
+export const deleteCliente = async (clienteId: number): Promise<boolean> => {
+  await wait();
+  const index = clientes.findIndex((c) => c.id === clienteId);
+  if (index === -1) return false;
+  clientes.splice(index, 1);
+  return true;
 };
 
 // Listado de productos

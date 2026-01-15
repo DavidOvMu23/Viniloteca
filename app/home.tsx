@@ -5,12 +5,13 @@ import CustomButton from "src/components/Buttons/button";
 import Header from "src/components/Header/header";
 import BottomNav, {
   type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav"; // Barra inferior de navegación
+} from "src/components/BottomNav/bottom_nav"; // Usamos la barra inferior de navegación
 
 export default function Home() {
-  const router = useRouter(); //navegación para hacer push a rutas
+  // Usamos el router para movernos entre pantallas
+  const router = useRouter();
 
-  // Configuración de pestañas inferiores; marcamos Home como activa
+  // Definimos las pestañas de abajo y marcamos Home como activa
   const navItems: BottomNavItem[] = [
     {
       icon: "home-outline",
@@ -31,19 +32,19 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      {/* Header con saludo y avatar que navega a login */}
+      {/* Mostramos el header y dejamos el avatar como atajo al login */}
       <Header
         name="Hola Usuario!"
         onAvatarPress={() => router.push("/login")}
       />
 
-      {/* Zona central con CTA principal hacia clientes */}
+      {/* Dejamos el botón principal para ir a clientes */}
       <View style={styles.content}>
         <CustomButton text="Clientes" onPress={() => router.push("/client")} />
         <Text style={styles.welcome}></Text>
       </View>
 
-      {/* Barra inferior*/}
+      {/* Pintamos la barra inferior */}
       <BottomNav items={navItems} showFab={false} />
     </View>
   );
