@@ -1,66 +1,27 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { TextInput } from "react-native-paper";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import Header from "src/components/Header/header";
 import CustomButton from "src/components/Buttons/button";
-import { getClienteById, updateCliente } from "src/types";
+import useEditClient from "src/hooks/useEditClient";
 
 export default function EditClient() {
-  // Usamos el router para volver o salir
-  const router = useRouter();
-  // Leemos el id que llega en la URL
-  const params = useLocalSearchParams<{ id?: string }>();
-  const clientId = Number(params.id);
-
-  // Guardamos el nombre para el título
-  const [clientName, setClientName] = useState<string | null>(null);
-  // Usamos esto para mostrar un estado de “no encontrado”
-  const [notFound, setNotFound] = useState(false);
-
-  // Guardamos los estados del formulario que llegan de los inputs
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [nif, setNif] = useState("");
-
-  // Cargamos los datos del cliente para rellenar el formulario
-  const loadClient = useCallback(async () => {
-    const client = await getClienteById(clientId);
-    if (!client) {
-      setClientName(null);
-      setNotFound(true);
-      return;
-    }
-    setNotFound(false);
-    setClientName(client.nombre);
-    setNombre(client.nombre ?? "");
-    setEmail(client.email ?? "");
-    setTelefono(client.telefono ?? "");
-    setNif(client.nifCif ?? "");
-  }, [clientId]);
-
-  // Volvemos a cargar los datos si cambia el id
-  useEffect(() => {
-    if (Number.isNaN(clientId)) {
-      setClientName(null);
-      setNotFound(true);
-      return;
-    }
-    void loadClient();
-  }, [clientId, loadClient]);
-
-  // Guardamos cambios y volvemos atrás
-  const handleSave = () => {
-    updateCliente(clientId, {
-      nombre: nombre.trim(),
-      email: email.trim() || undefined,
-      telefono: telefono.trim() || undefined,
-      nifCif: nif.trim() || undefined,
-    }).then(() => {
-      router.back();
-    });
-  };
+  // Obtenemos carga, estado del formulario y navegación desde el hook
+  const {
+    notFound,
+    clientName,
+    nombre,
+    email,
+    telefono,
+    nif,
+    setNombre,
+    setEmail,
+    setTelefono,
+    setNif,
+    handleSave,
+    handleCancel,
+    textInputProps,
+  } = useEditClient();
 
   if (notFound) {
     return (
@@ -72,7 +33,7 @@ export default function EditClient() {
             Vuelve a la lista y selecciona otro cliente.
           </Text>
           <View style={{ height: 12 }} />
-          <CustomButton text="Volver" onPress={() => router.back()} />
+          <CustomButton text="Volver" onPress={handleCancel} />
         </View>
       </View>
     );
@@ -93,8 +54,8 @@ export default function EditClient() {
           label="Nombre"
           value={nombre}
           onChangeText={setNombre}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="account-outline" color="#6b7280" />}
         />
 
@@ -105,8 +66,8 @@ export default function EditClient() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
         />
 
@@ -117,8 +78,8 @@ export default function EditClient() {
           keyboardType="phone-pad"
           value={telefono}
           onChangeText={setTelefono}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="phone-outline" color="#6b7280" />}
         />
 
@@ -128,8 +89,8 @@ export default function EditClient() {
           label="NIF/CIF"
           value={nif}
           onChangeText={setNif}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={
             <TextInput.Icon
               icon="card-account-details-outline"
@@ -142,7 +103,7 @@ export default function EditClient() {
         <View style={styles.actions}>
           <CustomButton text="Guardar cambios" onPress={handleSave} />
           <View style={{ height: 10 }} />
-          <CustomButton text="Cancelar" onPress={() => router.back()} />
+          <CustomButton text="Cancelar" onPress={handleCancel} />
         </View>
       </ScrollView>
     </View>
@@ -168,12 +129,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#4b5563",
     marginBottom: 8,
-  },
-  input: {
-    backgroundColor: "#fafafa",
-  },
-  outline: {
-    borderRadius: 12,
   },
   actions: {
     marginTop: 10,

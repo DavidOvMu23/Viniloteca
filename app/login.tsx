@@ -1,22 +1,22 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, StyleSheet, Text } from "react-native";
-import { useRouter } from "expo-router";
 import LockIcon from "../src/hooks/login/LockIcon/lock_icon";
 import TextfieldEmail from "../src/hooks/login/Textfield/textfield_email";
 import TextfieldPassword from "../src/hooks/login/Textfield/textfield_password";
 import TextButton from "../src/components/Buttons/text_button";
 import Button from "../src/components/Buttons/button";
 import GoogleButton from "../src/components/Buttons/google_button";
+import useLogin from "../src/hooks/useLogin";
 
 export default function Login() {
-  // Usamos el router para movernos después del login
-  const router = useRouter();
-  // Guardamos el email que llega desde el input
-  const [email, setEmail] = useState("");
-  // Guardamos la contraseña que llega desde el input
-  const [password, setPassword] = useState("");
-  // Calculamos si el botón debe estar desactivado según el estado
-  const isLoginDisabled = !email.trim() || !password.trim();
+  const {
+    email,
+    password,
+    isLoginDisabled,
+    handleEmailChange,
+    handlePasswordChange,
+    handleSubmit,
+  } = useLogin();
 
   return (
     <View style={styles.container}>
@@ -32,7 +32,7 @@ export default function Login() {
         <Text style={styles.label}>Correo Electrónico</Text>
 
         {/* Conectamos el input con el estado `email` */}
-        <TextfieldEmail value={email} onChangeText={(text) => setEmail(text)} />
+        <TextfieldEmail value={email} onChangeText={handleEmailChange} />
 
         <View style={styles.passwordLabelContainer}>
           <Text style={styles.label}>Contraseña</Text>
@@ -42,14 +42,14 @@ export default function Login() {
         {/* Conectamos el input con el estado `password` */}
         <TextfieldPassword
           value={password}
-          onChangeText={(text) => setPassword(text)}
+          onChangeText={handlePasswordChange}
         />
 
         {/* Activamos el botón solo si `email` y `password` tienen contenido */}
         <Button
           text="Iniciar Sesión"
           disabled={isLoginDisabled}
-          onPress={() => router.replace("/home")}
+          onPress={handleSubmit}
         />
 
         {/* Ponemos un separador para separar el login normal del de Google */}

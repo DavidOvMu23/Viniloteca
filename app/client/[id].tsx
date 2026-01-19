@@ -1,110 +1,20 @@
-import React, { useCallback, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Platform,
-} from "react-native";
-import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import React from "react";
+import { View, Text, StyleSheet, ScrollView } from "react-native";
 import Header from "src/components/Header/header";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
-import {
-  deleteCliente,
-  getClienteById,
-  pedidos,
-  type Cliente,
-} from "src/types";
+import BottomNav from "src/components/BottomNav/bottom_nav";
 import CustomButton from "src/components/Buttons/button";
+import useClientDetail from "src/hooks/useClientDetail";
 
 export default function ClientDetail() {
-  // Usamos el router para movernos entre pantallas
-  const router = useRouter();
-  // Leemos el id que llega desde la URL
-  const params = useLocalSearchParams<{ id?: string }>();
-  const clientId = Number(params.id);
-  const [client, setClient] = useState<Cliente | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Cargamos el cliente cuando entramos o volvemos a esta pantalla
-  const loadClient = useCallback(() => {
-    let active = true;
-    setLoading(true);
-    getClienteById(clientId).then((data) => {
-      if (active) {
-        setClient(data);
-        setLoading(false);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, [clientId]);
-
-  useFocusEffect(loadClient);
-
-  // Filtramos los pedidos usando el `clientId` que leímos de la URL
-  const pedidosCliente = useMemo(
-    () => pedidos.filter((p) => p.clienteId === clientId),
-    [clientId]
-  );
-
-  // Confirmamos y borramos el cliente
-  const handleDelete = () => {
-    const confirmDelete = async () => {
-      const deleted = await deleteCliente(clientId);
-      if (deleted) {
-        router.replace("/client");
-        return;
-      }
-      Alert.alert("Error", "No se pudo eliminar el cliente.");
-    };
-
-    // Usamos una alerta distinta según si estamos en web o móvil
-    if (Platform.OS === "web") {
-      // Mostramos un confirm en web
-      const ok = window.confirm(
-        "Eliminar cliente\n\nEsta acción no se puede deshacer."
-      );
-      if (ok) {
-        void confirmDelete();
-      }
-      return;
-    }
-
-    Alert.alert("Eliminar cliente", "Esta acción no se puede deshacer.", [
-      { text: "Cancelar", style: "cancel" },
-      {
-        text: "Eliminar",
-        style: "destructive",
-        onPress: () => {
-          void confirmDelete();
-        },
-      },
-    ]);
-  };
-
-  // Definimos la barra inferior y marcamos Clientes como activo
-  const navItems: BottomNavItem[] = [
-    {
-      icon: "home-outline",
-      label: "Home",
-      onPress: () => router.push("/home"),
-      href: "/home",
-    },
-    { icon: "document-text-outline", label: "Pedidos" },
-    {
-      icon: "people-outline",
-      label: "Clientes",
-      onPress: () => router.push("/client"),
-      href: "/client",
-      active: true,
-    },
-    { icon: "cube-outline", label: "Inventario" },
-  ];
+  // Centralizamos carga, navegación y acciones en el hook
+  const {
+    client,
+    loading,
+    pedidosCliente,
+    navItems,
+    handleEdit,
+    handleDelete,
+  } = useClientDetail();
 
   // Mostramos un estado de carga mientras buscamos el cliente
   if (loading) {
@@ -141,10 +51,7 @@ export default function ClientDetail() {
 
       {/* Dejamos botones para editar o borrar */}
       <View style={styles.actionBar}>
-        <CustomButton
-          text="Editar cliente"
-          onPress={() => router.push(`/client/${client.id}/edit`)}
-        />
+        <CustomButton text="Editar cliente" onPress={handleEdit} />
         <View style={{ height: 10 }} />
         <CustomButton text="Eliminar cliente" onPress={handleDelete} />
       </View>

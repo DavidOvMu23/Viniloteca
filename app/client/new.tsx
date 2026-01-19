@@ -1,55 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
 import Header from "src/components/Header/header";
 import CustomButton from "src/components/Buttons/button";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
 import { TextInput } from "react-native-paper";
-import { createCliente } from "src/types";
+import useNewClient from "src/hooks/useNewClient";
 
 export default function NewClient() {
-  // Usamos el router para volver o ir al detalle
-  const router = useRouter();
-  // Guardamos los estados del formulario que vienen de los inputs
-  const [nombre, setNombre] = useState("");
-  const [email, setEmail] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [nif, setNif] = useState("");
-  // Bloqueamos el guardado si no hay nombre
-  const isSaveDisabled = !nombre.trim();
-
-  // Creamos el cliente con lo que escribimos en el formulario
-  const handleSave = async () => {
-    const nuevo = await createCliente({
-      nombre: nombre.trim(),
-      email: email.trim() || undefined,
-      telefono: telefono.trim() || undefined,
-      nifCif: nif.trim() || undefined,
-      activo: true,
-    });
-    router.replace(`/client/${nuevo.id}`);
-  };
-
-  // Definimos la barra inferior con Clientes activo
-  const navItems: BottomNavItem[] = [
-    {
-      icon: "home-outline",
-      label: "Home",
-      onPress: () => router.push("/home"),
-      href: "/home",
-    },
-    { icon: "document-text-outline", label: "Pedidos" },
-    {
-      icon: "people-outline",
-      label: "Clientes",
-      onPress: () => router.push("/client"),
-      href: "/client",
-      active: true,
-    },
-    { icon: "cube-outline", label: "Inventario" },
-  ];
+  // Obtenemos estado, validaciones y navegación desde el hook
+  const {
+    nombre,
+    email,
+    telefono,
+    nif,
+    isSaveDisabled,
+    navItems,
+    setNombre,
+    setEmail,
+    setTelefono,
+    setNif,
+    handleSave,
+    handleCancel,
+    textInputProps,
+  } = useNewClient();
 
   return (
     <View style={styles.container}>
@@ -66,8 +39,8 @@ export default function NewClient() {
           label="Nombre"
           value={nombre}
           onChangeText={setNombre}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="account-outline" color="#6b7280" />}
         />
 
@@ -78,8 +51,8 @@ export default function NewClient() {
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="email-outline" color="#6b7280" />}
         />
 
@@ -90,8 +63,8 @@ export default function NewClient() {
           keyboardType="phone-pad"
           value={telefono}
           onChangeText={setTelefono}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={<TextInput.Icon icon="phone-outline" color="#6b7280" />}
         />
 
@@ -101,8 +74,8 @@ export default function NewClient() {
           label="NIF/CIF"
           value={nif}
           onChangeText={setNif}
-          style={styles.input}
-          outlineStyle={styles.outline}
+          style={textInputProps.style}
+          outlineStyle={textInputProps.outlineStyle}
           left={
             <TextInput.Icon
               icon="card-account-details-outline"
@@ -120,7 +93,7 @@ export default function NewClient() {
         />
         <View style={{ height: 12 }} />
         {/* Cancelamos y volvemos atrás */}
-        <CustomButton text="Cancelar" onPress={() => router.back()} />
+        <CustomButton text="Cancelar" onPress={handleCancel} />
       </ScrollView>
       <BottomNav items={navItems} showFab={false} />
     </View>
@@ -145,11 +118,5 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: "#4b5563",
-  },
-  input: {
-    backgroundColor: "#fafafa",
-  },
-  outline: {
-    borderRadius: 12,
   },
 });
