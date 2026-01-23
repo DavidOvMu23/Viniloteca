@@ -21,38 +21,27 @@ export default function Login() {
     handleSubmit,
   } = useLogin();
 
-  // Obtenemos los colores del tema actual
-  const { colors } = useThemePreference();
+  // Obtenemos los colores y si está en modo oscuro
+  const { colors, isDark } = useThemePreference();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Mostramos el logo principal de la Viniloteca */}
       <View style={{ alignItems: "center", width: "100%", marginTop: 32 }}>
-        {/* circulo blanco con sombra para que el logo se pueda ver bien en modo
-        oscuro */}
-        <View
+        <Image
+          source={
+            isDark
+              ? require("../assets/logo-oscuro.png")
+              : require("../assets/logo-claro.png")
+          }
           style={{
-            backgroundColor: "#fff",
-            borderRadius: 60,
-            width: 120,
-            height: 120,
-            alignItems: "center",
-            justifyContent: "center",
+            width: 175,
+            height: 175,
+            resizeMode: "contain",
             marginBottom: 8,
-            shadowColor: "#000",
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            shadowOffset: { width: 0, height: 2 },
-            elevation: 2,
           }}
-        >
-          {/* logo completo */}
-          <Image
-            source={require("../assets/logo-completo.png")}
-            style={{ width: 90, height: 90, resizeMode: "contain" }}
-            accessibilityLabel="Logo de La Viniloteca"
-          />
-        </View>
+          accessibilityLabel="Logo de La Viniloteca"
+        />
       </View>
 
       <Text style={[styles.title, { color: colors.text }]}>Bienvenido</Text>
