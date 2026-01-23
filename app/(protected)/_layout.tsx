@@ -25,7 +25,7 @@ export default function ProtectedLayout() {
   }
 
   // Si está autenticado, mostramos las pantallas protegidas
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Stack screenOptions={{ headerShown: false, animation: "none" }} />;
 }
 
 const styles = StyleSheet.create({

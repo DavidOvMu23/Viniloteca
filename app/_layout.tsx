@@ -10,7 +10,7 @@ export default function Layout() {
     <ThemeProvider>
       <AuthProvider>
         <StatusBar style="auto" />
-        <Stack screenOptions={{ headerShown: false }} />
+        <Stack screenOptions={{ headerShown: false, animation: "none" }} />
       </AuthProvider>
     </ThemeProvider>
   );
