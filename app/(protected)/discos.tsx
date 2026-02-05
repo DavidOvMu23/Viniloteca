@@ -33,12 +33,6 @@ export default function Discos() {
   const [items, setItems] = useState<DiscogsItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debug, setDebug] = useState<{
-    query: string;
-    url: string;
-    count: number;
-    sample: DiscogsItem | null;
-  }>({ query: "", url: "", count: 0, sample: null });
 
   // Barra inferior
   const navItems: BottomNavItem[] = [
@@ -64,7 +58,6 @@ export default function Discos() {
     const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(
       trimmed,
     )}&type=release`;
-    setDebug({ query: trimmed, url, count: 0, sample: null });
 
     setLoading(true); // Mostramos loading
     setError(null); // Limpiamos error anterior
@@ -72,14 +65,6 @@ export default function Discos() {
     try {
       // Paso 2: Llamamos a Discogs y guardamos resultados
       const results = await searchDiscogs(trimmed);
-
-      // Paso 3: guardamos el primer resultado como ejemplo
-      setDebug({
-        query: trimmed,
-        url,
-        count: results.length,
-        sample: results[0] || null,
-      });
 
       setItems(results); // Guardamos resultados para mostrar en la lista
     } catch (err) {
@@ -172,9 +157,6 @@ export default function Discos() {
     );
   };
 
-  // Datos de ejemplo para mostrar el paso a paso en pantalla
-  const sampleFields = debug.sample ? getFields(debug.sample) : null;
-
   // UI principal de la pantalla
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -193,7 +175,7 @@ export default function Discos() {
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={handleSearch}
-          placeholder="Ej. Daft Punk Discovery"
+          placeholder="Ej. Michael Jackson Thriller"
           outlineStyle={{ borderRadius: 12 }}
           style={[styles.input, { backgroundColor: colors.surface }]}
         />
@@ -202,54 +184,6 @@ export default function Discos() {
           text={loading ? "Buscando..." : "Buscar"}
           onPress={handleSearch}
         />
-
-        {/* Paso a paso de la consulta (visible en pantalla) */}
-        <View
-          style={[
-            styles.debugBox,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <Text style={[styles.debugTitle, { color: colors.text }]}>
-            Paso a paso
-          </Text>
-          <Text style={[styles.debugLine, { color: colors.muted }]}>
-            1) Lo que escribiste:
-          </Text>
-          <Text style={[styles.debugValue, { color: colors.text }]}>
-            {debug.query || "—"}
-          </Text>
-
-          <Text style={[styles.debugLine, { color: colors.muted }]}>
-            2) URL que se envía a Discogs:
-          </Text>
-          <Text
-            style={[styles.debugValue, { color: colors.text }]}
-            numberOfLines={2}
-          >
-            {debug.url || "—"}
-          </Text>
-
-          <Text style={[styles.debugLine, { color: colors.muted }]}>
-            3) Cantidad de resultados:
-          </Text>
-          <Text style={[styles.debugValue, { color: colors.text }]}>
-            {debug.query ? debug.count : "—"}
-          </Text>
-
-          <Text style={[styles.debugLine, { color: colors.muted }]}>
-            4) Primer resultado (ejemplo):
-          </Text>
-          {sampleFields ? (
-            <Text style={[styles.debugValue, { color: colors.text }]}>
-              {sampleFields.artist || "(sin artista)"} —{" "}
-              {sampleFields.album || "(sin álbum)"} —{" "}
-              {sampleFields.year || "(sin año)"}
-            </Text>
-          ) : (
-            <Text style={[styles.debugValue, { color: colors.text }]}>—</Text>
-          )}
-        </View>
 
         {/* Cargando */}
         {loading ? (
@@ -352,21 +286,5 @@ const styles = StyleSheet.create({
   },
   error: {
     fontSize: 13,
-  },
-  debugBox: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    gap: 6,
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  debugLine: {
-    fontSize: 12,
-  },
-  debugValue: {
-    fontSize: 12,
   },
 });
