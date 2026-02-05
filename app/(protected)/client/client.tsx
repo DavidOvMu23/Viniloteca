@@ -39,14 +39,18 @@ export default function Client() {
           <Text style={styles.emptyText}>No hay clientes todavía.</Text>
         ) : (
           // Cada botón llama a handleOpenClient con el id del elemento iterado
-          items.map((c) => (
-            <View key={c.id}>
-              <CustomButton
-                text={c.nombre}
-                onPress={() => handleOpenClient(c.id)}
-              />
-            </View>
-          ))
+          items.map(function renderClient(c) {
+            return (
+              <View key={c.id}>
+                <CustomButton
+                  text={c.nombre}
+                  onPress={function onPress() {
+                    handleOpenClient(c.id);
+                  }}
+                />
+              </View>
+            );
+          })
         )}
       </ScrollView>
 

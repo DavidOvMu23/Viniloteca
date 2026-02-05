@@ -23,6 +23,10 @@ export default function useHome() {
     router.push("/preferences");
   }, [router]);
 
+  const goDiscos = useCallback(() => {
+    router.push("/discos");
+  }, [router]);
+
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       {
@@ -31,6 +35,12 @@ export default function useHome() {
         onPress: goHome,
         href: "/home",
         active: true,
+      },
+      {
+        icon: "disc-outline",
+        label: "Discos",
+        onPress: goDiscos,
+        href: "/discos",
       },
       {
         icon: "people-outline",
@@ -51,7 +61,7 @@ export default function useHome() {
         href: "/preferences",
       },
     ],
-    [goClients, goHome, goPreferences, goProfile],
+    [goClients, goDiscos, goHome, goPreferences, goProfile],
   );
 
   return {

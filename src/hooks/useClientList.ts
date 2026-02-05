@@ -55,6 +55,13 @@ export default function useClientList() {
     [router],
   );
 
+  const goDiscos = useCallback(
+    function goDiscos() {
+      router.push("/discos");
+    },
+    [router],
+  );
+
   // Navegamos al detalle del cliente pulsado
   const handleOpenClient = useCallback(
     function handleOpenClient(id: string) {
@@ -84,6 +91,12 @@ export default function useClientList() {
         href: "/home",
       },
       {
+        icon: "disc-outline",
+        label: "Discos",
+        onPress: goDiscos,
+        href: "/discos",
+      },
+      {
         icon: "people-outline",
         label: "Clientes",
         onPress: goClients,
@@ -101,7 +114,7 @@ export default function useClientList() {
         href: "/preferences",
       },
     ],
-    [goClients, goHome],
+    [goClients, goDiscos, goHome],
   );
 
   return {

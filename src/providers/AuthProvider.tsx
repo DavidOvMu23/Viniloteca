@@ -12,6 +12,7 @@ import {
   loginWithEmail,
   restoreSession,
 } from "src/services/auth";
+import { supabase } from "supabase/supabaseClient";
 import { useUserStore, type UserProfile } from "src/stores/userStore";
 
 export type AuthStatus = "checking" | "authenticated" | "unauthenticated";
@@ -44,9 +45,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    const metadataName =
+      typeof session.user.user_metadata?.full_name === "string"
+        ? session.user.user_metadata.full_name
+        : "";
+
+    if (metadataName) {
+      await supabase.from("profiles").upsert({
+        id: session.user.id,
+        full_name: metadataName,
+      });
+    }
+
     const profile = await getUserProfileById(
       session.user.id,
       session.user.email ?? "",
+      metadataName,
     );
     if (!profile) {
       await clearSession();

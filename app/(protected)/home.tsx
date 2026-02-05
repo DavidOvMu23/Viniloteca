@@ -9,7 +9,9 @@ import { useThemePreference } from "src/providers/ThemeProvider";
 
 // me ha ayudado el chat por q era una fumada
 export default function Home() {
-  const user = useUserStore((state) => state.user);
+  const user = useUserStore(function selectUser(state) {
+    return state.user;
+  });
   const {
     navItems,
     handleAvatarPress,
@@ -47,9 +49,9 @@ export default function Home() {
           <Text style={[styles.value, { color: colors.text }]}>{roleName}</Text>
         </View>
         <View style={styles.row}>
-          <Text style={[styles.label, { color: colors.muted }]}>Correo</Text>
+          <Text style={[styles.label, { color: colors.muted }]}>Nombre</Text>
           <Text style={[styles.value, { color: colors.text }]}>
-            {user?.email}
+            {user?.name}
           </Text>
         </View>
         <View style={styles.badges}>

@@ -75,6 +75,13 @@ export default function useNewClient() {
     [router],
   );
 
+  const goDiscos = useCallback(
+    function goDiscos() {
+      router.push("/discos");
+    },
+    [router],
+  );
+
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       {
@@ -82,6 +89,12 @@ export default function useNewClient() {
         label: "Home",
         onPress: goHome,
         href: "/home",
+      },
+      {
+        icon: "disc-outline",
+        label: "Discos",
+        onPress: goDiscos,
+        href: "/discos",
       },
       {
         icon: "people-outline",
@@ -93,7 +106,7 @@ export default function useNewClient() {
       { icon: "person-circle-outline", label: "Perfil", href: "/profile" },
       { icon: "settings-outline", label: "Preferencias", href: "/preferences" },
     ],
-    [goClients, goHome],
+    [goClients, goDiscos, goHome],
   );
 
   useEffect(() => {

@@ -17,6 +17,7 @@ export default function Preferences() {
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       { icon: "home-outline", label: "Inicio", href: "/home" },
+      { icon: "disc-outline", label: "Discos", href: "/discos" },
       { icon: "people-outline", label: "Clientes", href: "/client" },
       { icon: "person-circle-outline", label: "Perfil", href: "/profile" },
       {

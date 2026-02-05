@@ -145,21 +145,23 @@ export default function ClientDetail() {
             <Text style={styles.emptyText}>Sin pedidos registrados.</Text>
           ) : (
             // Recorremos los pedidos del hook y pintamos cada fila con su estado
-            pedidosCliente.map((pedido) => (
-              <View key={pedido.id} style={styles.pedidoRow}>
-                <View style={styles.pedidoLeft}>
-                  <Text style={styles.pedidoCode}>{pedido.codigo}</Text>
-                  <Text style={styles.pedidoDates}>
-                    {pedido.fechaInicio} · {pedido.fechaFin}
-                  </Text>
+            pedidosCliente.map(function renderPedido(pedido) {
+              return (
+                <View key={pedido.id} style={styles.pedidoRow}>
+                  <View style={styles.pedidoLeft}>
+                    <Text style={styles.pedidoCode}>{pedido.codigo}</Text>
+                    <Text style={styles.pedidoDates}>
+                      {pedido.fechaInicio} · {pedido.fechaFin}
+                    </Text>
+                  </View>
+                  <View
+                    style={[styles.statusPill, statusPillStyle(pedido.estado)]}
+                  >
+                    <Text style={styles.statusText}>{pedido.estado}</Text>
+                  </View>
                 </View>
-                <View
-                  style={[styles.statusPill, statusPillStyle(pedido.estado)]}
-                >
-                  <Text style={styles.statusText}>{pedido.estado}</Text>
-                </View>
-              </View>
-            ))
+              );
+            })
           )}
         </View>
       </ScrollView>

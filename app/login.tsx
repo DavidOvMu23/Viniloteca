@@ -26,6 +26,10 @@ export default function Login() {
   // Obtenemos los colores y si está en modo oscuro
   const { colors, isDark } = useThemePreference();
 
+  function handleGoSignup() {
+    router.push("/signup");
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Mostramos el logo principal de la Viniloteca */}
@@ -108,10 +112,7 @@ export default function Login() {
           <Text style={[styles.signupText, { color: colors.muted }]}>
             ¿No tienes una cuenta?
           </Text>
-          <TextButton
-            text="Regístrate ahora"
-            onPress={() => router.push("/signup")}
-          />
+          <TextButton text="Regístrate ahora" onPress={handleGoSignup} />
         </View>
       </View>
     </View>

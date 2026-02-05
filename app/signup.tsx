@@ -31,6 +31,10 @@ export default function Signup() {
   const fieldBackground = isDark ? "#111b2a" : "#f8fafc";
   const placeholderColor = isDark ? "rgba(179,192,207,0.72)" : "#9ca3af";
 
+  function handleGoLogin() {
+    router.replace("/login");
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={{ alignItems: "center", width: "100%", marginTop: 32 }}>
@@ -64,7 +68,9 @@ export default function Signup() {
             autoCapitalize="words"
             activeOutlineColor={colors.primary}
             outlineColor={colors.border}
-            left={<TextInput.Icon icon="account-outline" color={placeholderColor} />}
+            left={
+              <TextInput.Icon icon="account-outline" color={placeholderColor} />
+            }
             style={[styles.input, { backgroundColor: fieldBackground }]}
             outlineStyle={styles.outline}
             value={fullName}
@@ -83,7 +89,10 @@ export default function Signup() {
         <TextfieldEmail value={email} onChangeText={handleEmailChange} />
 
         <Text style={[styles.label, { color: colors.muted }]}>Contraseña</Text>
-        <TextfieldPassword value={password} onChangeText={handlePasswordChange} />
+        <TextfieldPassword
+          value={password}
+          onChangeText={handlePasswordChange}
+        />
 
         <Text style={[styles.label, { color: colors.muted }]}>
           Confirmar contraseña
@@ -112,10 +121,7 @@ export default function Signup() {
           <Text style={[styles.signupText, { color: colors.muted }]}>
             ¿Ya tienes cuenta?
           </Text>
-          <TextButton
-            text="Inicia sesión"
-            onPress={() => router.replace("/login")}
-          />
+          <TextButton text="Inicia sesión" onPress={handleGoLogin} />
         </View>
       </View>
     </View>

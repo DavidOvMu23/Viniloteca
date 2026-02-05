@@ -17,12 +17,17 @@ type DbProfile = {
 
 const DEFAULT_AVATAR = "https://i.pravatar.cc/150?img=12";
 
-function mapProfile(profile: DbProfile | null, email: string): UserProfile {
+function mapProfile(
+  profile: DbProfile | null,
+  email: string,
+  fallbackName = "",
+): UserProfile {
   const roleName: RoleName = "NORMAL";
+  const safeName = profile?.full_name || fallbackName || "Usuario";
   return {
     id: profile?.id ?? "",
     roleName,
-    name: profile?.full_name || email || "Usuario",
+    name: safeName,
     email,
     avatarUrl: DEFAULT_AVATAR,
   };
@@ -46,7 +51,24 @@ export async function loginWithEmail(
     throw new Error("No se pudo obtener el usuario autenticado.");
   }
 
-  const profile = await getUserProfileById(user.id, user.email ?? email);
+  const metadataName =
+    typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : "";
+
+  // Si el perfil no tiene nombre, lo completamos con el nombre real guardado en auth
+  if (metadataName) {
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      full_name: metadataName,
+    });
+  }
+
+  const profile = await getUserProfileById(
+    user.id,
+    user.email ?? email,
+    metadataName,
+  );
   if (!profile) {
     throw new Error("No se pudo obtener el perfil del usuario.");
   }
@@ -73,6 +95,14 @@ export async function signUpWithEmail(
     throw error;
   }
 
+  // Guardamos el nombre en profiles para que quede persistido
+  if (data.user) {
+    await supabase.from("profiles").upsert({
+      id: data.user.id,
+      full_name: fullName,
+    });
+  }
+
   return {
     needsEmailConfirmation: !data.session,
   };
@@ -93,6 +123,7 @@ export async function restoreSession() {
 export async function getUserProfileById(
   userId: string,
   fallbackEmail = "",
+  fallbackName = "",
 ): Promise<UserProfile | null> {
   const { data, error } = await supabase
     .from("profiles")
@@ -104,5 +135,5 @@ export async function getUserProfileById(
     return null;
   }
 
-  return mapProfile(data ?? null, fallbackEmail);
+  return mapProfile(data ?? null, fallbackEmail, fallbackName);
 }
