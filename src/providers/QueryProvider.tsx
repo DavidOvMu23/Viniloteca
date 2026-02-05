@@ -9,6 +9,7 @@ import {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      // Cacheamos datos por 30s para evitar refetch innecesario (esto me lo ha recomendado el chat)
       staleTime: 30_000,
     },
   },
@@ -16,7 +17,9 @@ const queryClient = new QueryClient({
 
 export function QueryProvider({ children }: PropsWithChildren) {
   useEffect(function setupAppStateListener() {
+    // En web no usamos AppState
     if (Platform.OS === "web") return;
+    // En móvil, sincronizamos foco de React Query con el estado de la app
     const subscription = AppState.addEventListener(
       "change",
       function onChange(status) {

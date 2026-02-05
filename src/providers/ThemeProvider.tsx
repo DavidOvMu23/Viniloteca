@@ -119,9 +119,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   // Guardamos la preferencia elegida y actualizamos estado
   const setMode = async (nextMode: ThemeMode) => {
+    // Si el modo ya es el mismo, no hacemos nada
+    if (nextMode === mode) return;
     // nextMode llega desde pantalla de preferencias; persistimos para futuras aperturas
     setModeState(nextMode);
-    await AsyncStorage.setItem(THEME_KEY, nextMode);
+    try {
+      await AsyncStorage.setItem(THEME_KEY, nextMode);
+    } catch {
+      // Si falla el guardado, mantenemos el estado en memoria
+    }
   };
 
   // Memoizamos el valor del contexto para evitar renders innecesarios

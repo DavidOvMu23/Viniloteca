@@ -49,7 +49,16 @@ export default function useNewClient() {
         );
       }
     },
-    [email, isAdmin, nif, nombre, queryClient, router, telefono],
+    [
+      email,
+      isAdmin,
+      isSaveDisabled,
+      nif,
+      nombre,
+      queryClient,
+      router,
+      telefono,
+    ],
   );
 
   // Cancelamos y volvemos atrás

@@ -50,28 +50,28 @@ export default function Discos() {
 
   // Buscar discos en Discogs
   const handleSearch = async () => {
-    // Quitamos espacios para evitar buscar vacío
+    // 1) Evitamos disparar otra búsqueda si ya hay una en curso
+    if (loading) return;
+    // 2) Quitamos espacios para evitar buscar vacío
     const trimmed = query.trim();
-    if (!trimmed) return; // No buscamos si está vacío
+    // 3) Si quedó vacío, no hacemos petición
+    if (!trimmed) return;
 
-    // Paso 1: construimos la URL de búsqueda (esto es lo que se envía a Discogs)
-    const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(
-      trimmed,
-    )}&type=release`;
-
-    setLoading(true); // Mostramos loading
-    setError(null); // Limpiamos error anterior
+    // 4) Indicamos que empezamos la petición
+    setLoading(true);
+    // 5) Limpiamos el error anterior antes de llamar a la API
+    setError(null);
 
     try {
-      // Paso 2: Llamamos a Discogs y guardamos resultados
+      // 6) Llamamos a Discogs
       const results = await searchDiscogs(trimmed);
-
-      setItems(results); // Guardamos resultados para mostrar en la lista
+      // 7) Guardamos la lista de resultados para pintarla abajo
+      setItems(results);
     } catch (err) {
-      // Si algo falla, mostramos mensaje simple
+      // 8) Si algo falla, mostramos un mensaje legible en pantalla
       setError(err instanceof Error ? err.message : "Error buscando discos.");
     } finally {
-      // Siempre quitamos el loading
+      // 9) Quitamos el loading siempre
       setLoading(false);
     }
   };

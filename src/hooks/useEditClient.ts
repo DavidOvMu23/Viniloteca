@@ -60,20 +60,25 @@ export default function useEditClient() {
 
   // Guardamos cambios y volvemos atrás
   const handleSave = useCallback(
-    function handleSave() {
+    async function handleSave() {
+      // Si no hay id válido, no hacemos nada
+      if (!clientId) return;
       // Usamos el estado local del formulario para construir el payload; trim para limpiar espacios
-      updateClient(clientId, {
-        nombre: nombre.trim(),
-        email: email.trim() || undefined,
-        telefono: telefono.trim() || undefined,
-        nifCif: nif.trim() || undefined,
-      }).then(async function onUpdated() {
+      try {
+        await updateClient(clientId, {
+          nombre: nombre.trim(),
+          email: email.trim() || undefined,
+          telefono: telefono.trim() || undefined,
+          nifCif: nif.trim() || undefined,
+        });
         await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
         await queryClient.invalidateQueries({
           queryKey: clientQueryKey(clientId),
         });
         router.back();
-      });
+      } catch (error) {
+        console.error("No se pudo actualizar el cliente:", error);
+      }
     },
     [clientId, email, nif, nombre, queryClient, router, telefono],
   );

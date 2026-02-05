@@ -32,9 +32,11 @@ export default function useLogin() {
   const handleSubmit = useCallback(async () => {
     // Reiniciamos error antes de lanzar la petición de login
     setError(null);
+    // Evitamos enviar si el botón debería estar deshabilitado
+    if (isLoginDisabled) return;
     try {
       // Pasamos email/password al provider; si falla, guardamos mensaje para la UI
-      await login(email, password);
+      await login(email.trim(), password.trim());
       router.replace("/home");
     } catch (err) {
       setError(
@@ -43,7 +45,7 @@ export default function useLogin() {
           : "No se pudo iniciar sesión. Inténtalo de nuevo.",
       );
     }
-  }, [email, login, password, router]);
+  }, [email, isLoginDisabled, login, password, router]);
 
   return {
     email,

@@ -22,7 +22,6 @@ export default function useClientList() {
   const isAdmin = user?.roleName === "ADMIN";
 
   // Recargamos los clientes cuando volvemos a esta pantalla
-
   useEffect(
     function syncItems() {
       setItems(clientes);
@@ -66,6 +65,7 @@ export default function useClientList() {
   const handleOpenClient = useCallback(
     function handleOpenClient(id: string) {
       // id llega desde el item pulsado en la lista
+      if (!id) return;
       router.push(`/client/${id}`);
     },
     [router],

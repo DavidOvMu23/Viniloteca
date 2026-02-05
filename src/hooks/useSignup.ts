@@ -53,6 +53,9 @@ export default function useSignup() {
       setError(null);
       setSuccess(null);
 
+      // Evitamos enviar si el botón debería estar deshabilitado
+      if (isSignupDisabled) return;
+
       if (password !== confirmPassword) {
         setError("Las contraseñas no coinciden.");
         return;
@@ -60,7 +63,11 @@ export default function useSignup() {
 
       setIsBusy(true);
       try {
-        const result = await signUpWithEmail(email, password, fullName);
+        const result = await signUpWithEmail(
+          email.trim(),
+          password.trim(),
+          fullName.trim(),
+        );
         if (result.needsEmailConfirmation) {
           setSuccess(
             "Cuenta creada. Revisa tu correo para confirmar la cuenta y luego inicia sesión.",
@@ -78,7 +85,7 @@ export default function useSignup() {
         setIsBusy(false);
       }
     },
-    [confirmPassword, email, fullName, password],
+    [confirmPassword, email, fullName, isSignupDisabled, password],
   );
 
   return {

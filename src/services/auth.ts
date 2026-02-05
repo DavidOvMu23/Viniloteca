@@ -53,20 +53,27 @@ export async function loginWithEmail(
   email: string,
   password: string,
 ): Promise<AuthResult> {
+  // Limpiamos espacios del email para evitar errores por espacios invisibles
+  const safeEmail = email.trim();
+
+  // Llamada a Supabase Auth para iniciar sesión con email y password
   const { data, error } = await supabase.auth.signInWithPassword({
-    email,
+    email: safeEmail,
     password,
   });
 
+  // Si Supabase devuelve error, lo propagamos tal cual
   if (error) {
     throw error;
   }
 
+  // Validamos que exista usuario en la respuesta
   const user = data.user;
   if (!user) {
     throw new Error("No se pudo obtener el usuario autenticado.");
   }
 
+  // Intentamos leer el nombre guardado en los metadatos de auth
   const metadataName =
     typeof user.user_metadata?.full_name === "string"
       ? user.user_metadata.full_name
@@ -80,9 +87,10 @@ export async function loginWithEmail(
     });
   }
 
+  // Buscamos el perfil completo en la tabla profiles
   const profile = await getUserProfileById(
     user.id,
-    user.email ?? email,
+    user.email ?? safeEmail,
     metadataName,
   );
   if (!profile) {
@@ -97,16 +105,22 @@ export async function signUpWithEmail(
   password: string,
   fullName: string,
 ): Promise<SignUpResult> {
+  // Normalizamos datos de entrada
+  const safeEmail = email.trim();
+  const safeName = fullName.trim();
+
+  // Llamada a Supabase Auth para registrar usuario
   const { data, error } = await supabase.auth.signUp({
-    email,
+    email: safeEmail,
     password,
     options: {
       data: {
-        full_name: fullName,
+        full_name: safeName,
       },
     },
   });
 
+  // Si Supabase devuelve error, lo propagamos
   if (error) {
     throw error;
   }
@@ -115,7 +129,7 @@ export async function signUpWithEmail(
   if (data.user) {
     await supabase.from("profiles").upsert({
       id: data.user.id,
-      full_name: fullName,
+      full_name: safeName,
     });
   }
 
@@ -129,6 +143,7 @@ export async function clearSession() {
 }
 
 export async function restoreSession() {
+  // Recuperamos sesión actual desde Supabase
   const { data, error } = await supabase.auth.getSession();
   if (error) {
     return null;
@@ -141,12 +156,14 @@ export async function getUserProfileById(
   fallbackEmail = "",
   fallbackName = "",
 ): Promise<UserProfile | null> {
+  // Pedimos el perfil al backend
   const { data, error } = await supabase
     .from("profiles")
     .select("id, full_name, created_at, avatar_url")
     .eq("id", userId)
     .single();
 
+  // Si hay error, intentamos estrategias de fallback
   if (error) {
     if (error.code === "PGRST116") {
       return mapProfile(null, fallbackEmail, fallbackName);

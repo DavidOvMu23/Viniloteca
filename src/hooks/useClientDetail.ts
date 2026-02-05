@@ -106,12 +106,16 @@ export default function useClientDetail() {
       if (!canDelete) return;
 
       async function confirmDelete() {
-        await deleteClient(clientId);
-        await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
-        await queryClient.invalidateQueries({
-          queryKey: clientQueryKey(clientId),
-        });
-        router.replace("/client");
+        try {
+          await deleteClient(clientId);
+          await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+          await queryClient.invalidateQueries({
+            queryKey: clientQueryKey(clientId),
+          });
+          router.replace("/client");
+        } catch (error) {
+          console.error("No se pudo eliminar el cliente:", error);
+        }
       }
 
       // Usamos una alerta distinta según si estamos en web o móvil
@@ -136,7 +140,7 @@ export default function useClientDetail() {
         },
       ]);
     },
-    [canDelete, clientId, queryClient, router],
+    [canDelete, clientId, isValidId, queryClient, router],
   );
 
   return {

@@ -5,6 +5,7 @@ import { useUserStore } from "src/stores/userStore";
 
 export default function useHome() {
   const router = useRouter();
+  // Leemos el usuario actual desde el store
   const user = useUserStore((state) => state.user);
 
   const goHome = useCallback(() => {

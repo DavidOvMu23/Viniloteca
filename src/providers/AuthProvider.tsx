@@ -36,41 +36,55 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Revisamos almacenamiento local al arrancar para restaurar sesión
   const bootstrap = useCallback(async () => {
-    // 1) Marcamos que estamos verificando, 2) leemos token mock, 3) traemos perfil, 4) ajustamos estado
+    // 1) Marcamos que estamos verificando la sesión
     setStatus("checking");
-    const session = await restoreSession();
-    if (!session?.user) {
-      clearUser();
-      setStatus("unauthenticated");
-      return;
-    }
+    try {
+      // 2) Recuperamos la sesión guardada en el dispositivo
+      const session = await restoreSession();
+      if (!session?.user) {
+        // 3) Si no hay sesión, limpiamos estado y salimos
+        clearUser();
+        setStatus("unauthenticated");
+        return;
+      }
 
-    const metadataName =
-      typeof session.user.user_metadata?.full_name === "string"
-        ? session.user.user_metadata.full_name
-        : "";
+      // 4) Intentamos leer el nombre guardado en metadata de auth
+      const metadataName =
+        typeof session.user.user_metadata?.full_name === "string"
+          ? session.user.user_metadata.full_name
+          : "";
 
-    if (metadataName) {
-      await supabase.from("profiles").upsert({
-        id: session.user.id,
-        full_name: metadataName,
-      });
-    }
+      // 5) Si hay nombre, lo guardamos en profiles para mantenerlo sincronizado
+      if (metadataName) {
+        await supabase.from("profiles").upsert({
+          id: session.user.id,
+          full_name: metadataName,
+        });
+      }
 
-    const profile = await getUserProfileById(
-      session.user.id,
-      session.user.email ?? "",
-      metadataName,
-    );
-    if (!profile) {
+      // 6) Pedimos el perfil completo al backend
+      const profile = await getUserProfileById(
+        session.user.id,
+        session.user.email ?? "",
+        metadataName,
+      );
+      if (!profile) {
+        // 7) Si no hay perfil, cerramos sesión y limpiamos estado
+        await clearSession();
+        clearUser();
+        setStatus("unauthenticated");
+        return;
+      }
+
+      // 8) Guardamos el usuario y marcamos autenticado
+      setUser(profile);
+      setStatus("authenticated");
+    } catch {
+      // 9) Si algo falla, dejamos el estado como no autenticado
       await clearSession();
       clearUser();
       setStatus("unauthenticated");
-      return;
     }
-
-    setUser(profile);
-    setStatus("authenticated");
   }, [clearUser, setUser]);
 
   useEffect(() => {
@@ -82,6 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(
     async (email: string, password: string) => {
       // Recibimos email y password desde el hook de login; devolvemos error si las credenciales son malas
+      if (isBusy) return;
       setIsBusy(true);
       try {
         const result = await loginWithEmail(email, password);
@@ -94,11 +109,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsBusy(false);
       }
     },
-    [setUser],
+    [isBusy, setUser],
   );
 
   // Logout limpio: borra storage y resetea usuario
   const logout = useCallback(async () => {
+    // Evitamos doble logout si ya hay una acción en curso
+    if (isBusy) return;
     setIsBusy(true);
     try {
       // Limpiamos storage + store para que cualquier pantalla redirija a login
@@ -108,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsBusy(false);
     }
-  }, [clearUser]);
+  }, [clearUser, isBusy]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
