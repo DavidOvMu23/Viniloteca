@@ -21,12 +21,25 @@ export default function Profile() {
   const [name, setName] = useState(user?.name ?? "");
   const [selectedUri, setSelectedUri] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  // Tabs inferiores con Perfil activo
-  const navItems = useMemo<BottomNavItem[]>(
-    () => [
+  // Tabs inferiores con Perfil activo (Clientes sólo para ADMIN)
+  const currentUser = useUserStore((s) => s.user);
+  const isAdmin = currentUser?.roleName === "ADMIN";
+
+  const navItems = useMemo<BottomNavItem[]>(() => {
+    const items: BottomNavItem[] = [
       { icon: "home-outline", label: "Inicio", href: "/home" },
       { icon: "disc-outline", label: "Discos", href: "/discos" },
-      { icon: "people-outline", label: "Clientes", href: "/client" },
+    ];
+
+    if (isAdmin) {
+      items.push({
+        icon: "people-outline",
+        label: "Clientes",
+        href: "/client",
+      });
+    }
+
+    items.push(
       {
         icon: "person-circle-outline",
         label: "Perfil",
@@ -34,9 +47,10 @@ export default function Profile() {
         active: true,
       },
       { icon: "settings-outline", label: "Preferencias", href: "/preferences" },
-    ],
-    [],
-  );
+    );
+
+    return items;
+  }, [isAdmin]);
 
   // Si no hay usuario (es extraño q pase pero lo pongo mas q nada por evitar errores), mostramos mensaje
   if (!user) {

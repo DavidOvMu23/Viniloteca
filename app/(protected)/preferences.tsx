@@ -4,6 +4,7 @@ import Header from "src/components/Header/header";
 import BottomNav, {
   type BottomNavItem,
 } from "src/components/BottomNav/bottom_nav";
+import { useUserStore } from "src/stores/userStore";
 import {
   useThemePreference,
   type ThemeMode,
@@ -13,12 +14,25 @@ export default function Preferences() {
   const { mode, resolvedScheme, setMode, colors, isDark } =
     useThemePreference();
 
-  // Pestañas inferiores con Preferencias activa
-  const navItems = useMemo<BottomNavItem[]>(
-    () => [
+  // Pestañas inferiores con Preferencias activa (Clientes sólo para ADMIN)
+  const user = useUserStore((s) => s.user);
+  const isAdmin = user?.roleName === "ADMIN";
+
+  const navItems = useMemo<BottomNavItem[]>(() => {
+    const items: BottomNavItem[] = [
       { icon: "home-outline", label: "Inicio", href: "/home" },
       { icon: "disc-outline", label: "Discos", href: "/discos" },
-      { icon: "people-outline", label: "Clientes", href: "/client" },
+    ];
+
+    if (isAdmin) {
+      items.push({
+        icon: "people-outline",
+        label: "Clientes",
+        href: "/client",
+      });
+    }
+
+    items.push(
       { icon: "person-circle-outline", label: "Perfil", href: "/profile" },
       {
         icon: "settings-outline",
@@ -26,9 +40,10 @@ export default function Preferences() {
         href: "/preferences",
         active: true,
       },
-    ],
-    [],
-  );
+    );
+
+    return items;
+  }, [isAdmin]);
 
   // Opciones disponibles de tema para alternar entre claro/oscuro/sistema
   const options: Array<{ label: string; value: ThemeMode; helper: string }> = [

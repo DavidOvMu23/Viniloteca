@@ -14,6 +14,7 @@ type DbProfile = {
   full_name: string | null;
   created_at: string;
   avatar_url?: string | null;
+  role?: string | null;
 };
 
 const DEFAULT_AVATAR_BASE =
@@ -30,7 +31,8 @@ function mapProfile(
   email: string,
   fallbackName = "",
 ): UserProfile {
-  const roleName: RoleName = "NORMAL";
+  const rawRole = (profile as DbProfile | null)?.role ?? null;
+  const roleName: RoleName = rawRole === "ADMIN" ? "ADMIN" : "NORMAL";
   const safeName = profile?.full_name || fallbackName || "Usuario";
   const avatarPath = profile?.avatar_url ?? null;
   const isFullUrl =
@@ -159,7 +161,7 @@ export async function getUserProfileById(
   // Pedimos el perfil al backend
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, created_at, avatar_url")
+    .select("id, full_name, created_at, avatar_url, role")
     .eq("id", userId)
     .single();
 

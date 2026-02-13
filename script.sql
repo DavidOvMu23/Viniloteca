@@ -6,20 +6,28 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
   avatar_url text,
+  role text default 'NORMAL',
   created_at timestamptz not null default now()
 );
 
 alter table public.profiles
   add column if not exists avatar_url text;
 
--- RLS para profiles (cada usuario solo ve y edita su propio perfil)
-alter table public.profiles enable row level security;
-
-drop policy if exists profiles_select_own on public.profiles;
-create policy profiles_select_own
+-- RLS policies: asegurar creación/actualización de policies solicitadas
+drop policy if exists "profiles_select_own" on public.profiles;
+create policy "profiles_select_own"
 on public.profiles
 for select
 using (auth.uid() = id);
+
+drop policy if exists "profiles_select_supervisor" on public.profiles;
+create policy "profiles_select_supervisor"
+on public.profiles
+for select
+using (
+  auth.uid() = id
+  OR (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'SUPERVISOR'
+);
 
 drop policy if exists profiles_insert_own on public.profiles;
 create policy profiles_insert_own

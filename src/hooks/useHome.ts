@@ -28,8 +28,8 @@ export default function useHome() {
     router.push("/discos");
   }, [router]);
 
-  const navItems = useMemo<BottomNavItem[]>(
-    () => [
+  const navItems = useMemo<BottomNavItem[]>(() => {
+    const items: BottomNavItem[] = [
       {
         icon: "home-outline",
         label: "Inicio",
@@ -43,12 +43,19 @@ export default function useHome() {
         onPress: goDiscos,
         href: "/discos",
       },
-      {
+    ];
+
+    // Sólo mostramos la pestaña "Clientes" a ADMIN
+    if (user?.roleName === "ADMIN") {
+      items.push({
         icon: "people-outline",
         label: "Clientes",
         onPress: goClients,
         href: "/client",
-      },
+      });
+    }
+
+    items.push(
       {
         icon: "person-circle-outline",
         label: "Perfil",
@@ -61,15 +68,18 @@ export default function useHome() {
         onPress: goPreferences,
         href: "/preferences",
       },
-    ],
-    [goClients, goDiscos, goHome, goPreferences, goProfile],
-  );
+    );
+
+    return items;
+  }, [goClients, goDiscos, goHome, goPreferences, goProfile, user]);
 
   return {
     navItems,
     // Datos derivados para el header/card en Home
     displayName: user?.name ?? "Usuario",
     roleName: user?.roleName ?? "NORMAL",
+    // Para compatibilidad con la UI existente usamos `isAdmin`,
+    // pero ahora significa `ADMIN` en la DB
     isAdmin: user?.roleName === "ADMIN",
     handleClientsPress: goClients,
     handleAvatarPress: goProfile,

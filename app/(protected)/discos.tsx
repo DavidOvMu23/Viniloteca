@@ -13,6 +13,7 @@ import BottomNav, {
   type BottomNavItem,
 } from "src/components/BottomNav/bottom_nav";
 import { useThemePreference } from "src/providers/ThemeProvider";
+import { useUserStore } from "src/stores/userStore";
 import CustomButton from "src/components/Buttons/button";
 import { searchDiscogs } from "src/services/discogsService";
 
@@ -34,7 +35,10 @@ export default function Discos() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Barra inferior
+  // Barra inferior (solo mostramos Clientes si el usuario es ADMIN)
+  const user = useUserStore((s) => s.user);
+  const isAdmin = user?.roleName === "ADMIN";
+
   const navItems: BottomNavItem[] = [
     { icon: "home-outline", label: "Inicio", href: "/home" },
     {
@@ -43,7 +47,9 @@ export default function Discos() {
       href: "/discos",
       active: true,
     },
-    { icon: "people-outline", label: "Clientes", href: "/client" },
+    ...(isAdmin
+      ? [{ icon: "people-outline", label: "Clientes", href: "/client" }]
+      : []),
     { icon: "person-circle-outline", label: "Perfil", href: "/profile" },
     { icon: "settings-outline", label: "Preferencias", href: "/preferences" },
   ];

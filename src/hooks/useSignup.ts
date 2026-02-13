@@ -69,9 +69,7 @@ export default function useSignup() {
           fullName.trim(),
         );
         if (result.needsEmailConfirmation) {
-          setSuccess(
-            "Cuenta creada. Revisa tu correo para confirmar la cuenta y luego inicia sesión.",
-          );
+          setSuccess("Cuenta creada correctamente. Ya puedes iniciar sesión.");
         } else {
           setSuccess("Cuenta creada correctamente. Ya puedes iniciar sesión.");
         }
