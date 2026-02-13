@@ -17,6 +17,53 @@ type DbProfile = {
   role?: string | null;
 };
 
+type AuthCompatResponse<TData> = {
+  data: TData;
+  error: { message?: string } | null;
+};
+
+type AuthCompatClient = {
+  signInWithPassword: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<
+    AuthCompatResponse<{
+      user: {
+        id: string;
+        email?: string | null;
+        user_metadata?: { full_name?: unknown };
+      } | null;
+    }>
+  >;
+  signUp: (credentials: {
+    email: string;
+    password: string;
+    options?: { data?: { full_name?: string } };
+  }) => Promise<
+    AuthCompatResponse<{
+      user: {
+        id: string;
+        identities?: unknown[];
+      } | null;
+      session: unknown | null;
+    }>
+  >;
+  signOut: () => Promise<unknown>;
+  getSession: () => Promise<
+    AuthCompatResponse<{
+      session: {
+        user: {
+          id: string;
+          email?: string | null;
+          user_metadata?: { full_name?: unknown };
+        };
+      } | null;
+    }>
+  >;
+};
+
+const authClient = supabase.auth as unknown as AuthCompatClient;
+
 const DEFAULT_AVATAR_BASE =
   "https://ui-avatars.com/api/?background=E5E7EB&color=111827&size=256&name=";
 
@@ -51,6 +98,22 @@ function mapProfile(
   };
 }
 
+function buildFallbackUserProfile(
+  userId: string,
+  email: string,
+  fallbackName = "",
+): UserProfile {
+  const safeName = fallbackName.trim() || email.split("@")[0] || "Usuario";
+
+  return {
+    id: userId,
+    roleName: "NORMAL",
+    name: safeName,
+    email,
+    avatarUrl: buildDefaultAvatar(safeName),
+  };
+}
+
 export async function loginWithEmail(
   email: string,
   password: string,
@@ -59,7 +122,7 @@ export async function loginWithEmail(
   const safeEmail = email.trim();
 
   // Llamada a Supabase Auth para iniciar sesión con email y password
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await authClient.signInWithPassword({
     email: safeEmail,
     password,
   });
@@ -95,11 +158,12 @@ export async function loginWithEmail(
     user.email ?? safeEmail,
     metadataName,
   );
-  if (!profile) {
-    throw new Error("No se pudo obtener el perfil del usuario.");
-  }
 
-  return { user: profile };
+  return {
+    user:
+      profile ??
+      buildFallbackUserProfile(user.id, user.email ?? safeEmail, metadataName),
+  };
 }
 
 export async function signUpWithEmail(
@@ -112,7 +176,7 @@ export async function signUpWithEmail(
   const safeName = fullName.trim();
 
   // Llamada a Supabase Auth para registrar usuario
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await authClient.signUp({
     email: safeEmail,
     password,
     options: {
@@ -127,13 +191,24 @@ export async function signUpWithEmail(
     throw error;
   }
 
-  // Guardamos el nombre en profiles para que quede persistido
-  if (data.user) {
-    await supabase.from("profiles").upsert({
-      id: data.user.id,
-      full_name: safeName,
-    });
+  if (!data.user) {
+    throw new Error("No se pudo crear el usuario en Auth de Supabase.");
   }
+
+  if (
+    Array.isArray(data.user.identities) &&
+    data.user.identities.length === 0
+  ) {
+    throw new Error(
+      "Este correo ya está registrado. Intenta iniciar sesión con esa cuenta.",
+    );
+  }
+
+  // Intentamos guardar el nombre en profiles, sin bloquear el alta en Auth
+  await supabase.from("profiles").upsert({
+    id: data.user.id,
+    full_name: safeName,
+  });
 
   return {
     needsEmailConfirmation: !data.session,
@@ -141,12 +216,12 @@ export async function signUpWithEmail(
 }
 
 export async function clearSession() {
-  await supabase.auth.signOut();
+  await authClient.signOut();
 }
 
 export async function restoreSession() {
   // Recuperamos sesión actual desde Supabase
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await authClient.getSession();
   if (error) {
     return null;
   }
