@@ -1,4 +1,6 @@
-import { useCallback, useMemo } from "react";
+// este archivo maneja toda la lógica de la pantalla de DETALLE DE UN CLIENTE.
+
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { Alert, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,18 +11,23 @@ import { useClientQuery } from "src/hooks/queries/useClientQuery";
 import { useOrdersByClientQuery } from "src/hooks/queries/useOrdersByClientQuery";
 import { clientQueryKey, clientsQueryKey } from "src/hooks/queries/queryKeys";
 
+// El hook useClientDetail encapsula toda la lógica necesaria para la pantalla de detalle de un cliente.
 export default function useClientDetail() {
-  // Usamos el router para movernos entre pantallas
-  const router = useRouter();
-  // Leemos el id que llega desde la URL
-  const params = useLocalSearchParams<{ id?: string }>();
-  const clientId = params.id ?? "";
-  const isValidId = clientId.length > 0;
-  const queryClient = useQueryClient();
-  // Leemos el usuario actual para permisos
-  const user = useUserStore((state) => state.user);
-  const canDelete = user?.roleName === "ADMIN";
+  const router = useRouter(); // Para navegar entre pantallas (volver atrás, etc.)
 
+  const params = useLocalSearchParams<{ id?: string }>(); // Para leer el "id" del cliente que viene en la URL. Puede ser undefined si no se proporciona.
+
+  const clientId = params.id ?? ""; // Si no hay id, usamos cadena vacía para evitar problemas con undefined. Luego validamos que no sea vacío.
+
+  const isValidId = clientId.length > 0; // Validamos que el id no sea vacío para evitar hacer consultas innecesarias.
+
+  const queryClient = useQueryClient(); // Para manejar la caché de datos y poder invalidarla tras eliminar un cliente.
+
+  const user = useUserStore((state) => state.user); // Para saber quién es el usuario actual y qué permisos tiene. Solo los supervisores pueden eliminar clientes.
+
+  const canDelete = user?.roleName === "SUPERVISOR"; // Solo los supervisores pueden eliminar clientes.
+
+  // declaramos la consulta para obtener los datos del cliente usando nuestro hook personalizado useClientQuery.
   const {
     data: client,
     isLoading: isClientLoading,
@@ -28,6 +35,7 @@ export default function useClientDetail() {
     error: clientError,
   } = useClientQuery(clientId, isValidId);
 
+  // declaramos la consulta para obtener los pedidos del cliente usando nuestro hook personalizado useOrdersByClientQuery.
   const {
     data: pedidosCliente = [],
     isLoading: isOrdersLoading,
@@ -35,18 +43,85 @@ export default function useClientDetail() {
     error: ordersError,
   } = useOrdersByClientQuery(clientId, isValidId);
 
+  const [titleMap, setTitleMap] = useState<Record<number, string | null>>({}); // Mapa para almacenar títulos de Discogs por ID, para mostrar en la lista de pedidos.
+
+  // Función para construir la URL de la API de Discogs para obtener el resumen de un lanzamiento por su ID.
+  function buildDiscogsUrl(discogsId: number, token: string): string {
+    return `https://api.discogs.com/releases/${discogsId}?token=${encodeURIComponent(
+      token,
+    )}`;
+  }
+
+  // Función para obtener el título de un lanzamiento de Discogs dado su ID. Si hay algún error, devuelve null.
+  async function fetchDiscogsReleaseSummary(
+    discogsId: number,
+    token: string,
+  ): Promise<{ title: string | null }> {
+    try {
+      const url = buildDiscogsUrl(discogsId, token);
+      const response = await fetch(url, {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return { title: null };
+      const payload = await response.json();
+      return { title: (payload?.title as string | undefined) ?? null };
+    } catch {
+      return { title: null };
+    }
+  }
+
+  // Cuando cambian los pedidos, intentamos cargar títulos de Discogs
+  useEffect(() => {
+    const token = process.env.EXPO_PUBLIC_DISCOGS_TOKEN?.trim();
+    if (!token) return;
+    if (!pedidosCliente || pedidosCliente.length === 0) return;
+
+    let active = true;
+
+    const load = async () => {
+      // Extraer posibles IDs de Discogs del campo 'codigo' con formato 'DISC-<id>'
+      const ids = pedidosCliente
+        .map((p: any) => {
+          const m = String(p.codigo ?? "").match(/DISC-(\d+)/);
+          return m ? Number(m[1]) : null;
+        })
+        .filter((n) => n != null) as number[];
+
+      const uniqueIds = Array.from(new Set(ids));
+      const map: Record<number, string | null> = {};
+
+      for (const id of uniqueIds) {
+        const { title } = await fetchDiscogsReleaseSummary(id, token);
+        if (!active) return;
+        map[id] = title;
+      }
+
+      if (active) setTitleMap((prev) => ({ ...prev, ...map }));
+    };
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, [pedidosCliente]);
+
+  // Si CUALQUIERA de las dos consultas sigue cargando, mostramos spinner.
   const loading = isClientLoading || isOrdersLoading;
+
+  // Si CUALQUIERA de las dos falló, propagamos el error.
   const error = clientError ?? ordersError;
   const isError = isClientError || isOrdersError;
 
-  // Navegamos entre Home y Clientes desde la barra inferior
+  // Función para ir a la pantalla de Reservas.
   const goHome = useCallback(
     function goHome() {
-      router.push("/home");
+      router.push("/reservas");
     },
     [router],
   );
 
+  // Función para ir a la lista de Clientes.
   const goClients = useCallback(
     function goClients() {
       router.push("/client");
@@ -54,6 +129,7 @@ export default function useClientDetail() {
     [router],
   );
 
+  // Función para ir a la pantalla de Discos.
   const goDiscos = useCallback(
     function goDiscos() {
       router.push("/discos");
@@ -61,14 +137,14 @@ export default function useClientDetail() {
     [router],
   );
 
-  // Definimos la barra inferior y marcamos Clientes como activo
+  // Botones de navegación para la barra inferior. Cada uno tiene un icono, una etiqueta, una función onPress y una ruta href.
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       {
-        icon: "home-outline",
-        label: "Home",
+        icon: "calendar-outline",
+        label: "Reservas",
         onPress: goHome,
-        href: "/home",
+        href: "/reservas",
       },
       {
         icon: "disc-outline",
@@ -89,46 +165,69 @@ export default function useClientDetail() {
     [goClients, goDiscos, goHome],
   );
 
-  // Atajo para editar el cliente actual
+  // Función para ir a la pantalla de edición del cliente. Solo si tenemos los datos del cliente.
   const handleEdit = useCallback(
     function handleEdit() {
-      // Usamos el id del cliente ya cargado; si no está, no navegamos
+      // Comprobamos que los datos del cliente ya estén disponibles.
       if (!client) return;
+      // Navegamos a la ruta de edición con el id del cliente.
       router.push(`/client/${client.id}/edit`);
     },
     [client, router],
   );
 
-  // Confirmamos y borramos el cliente
+  // Función para eliminar el cliente, con confirmación previa. Solo para supervisores.
   const handleDelete = useCallback(
     function handleDelete() {
-      // Solo administradores pueden disparar este flujo
+      // Paso 1: Solo administradores pueden eliminar.
       if (!canDelete) return;
 
+      // Función interna asíncrona que realmente ejecuta el borrado.
       async function confirmDelete() {
         try {
+          // Llamamos al servidor para eliminar el cliente.
           await deleteClient(clientId);
+
+          // Invalidamos (refrescamos) la lista general de clientes
+          // para que el cliente eliminado desaparezca de ella.
           await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+
+          // También invalidamos la caché del cliente individual,
+          // por si alguien intenta volver a esta misma ficha.
           await queryClient.invalidateQueries({
             queryKey: clientQueryKey(clientId),
           });
+
+          // Volvemos a la lista de clientes (replace en vez de push
+          // para que el usuario no pueda "volver atrás" a una ficha
+          // que ya no existe).
           router.replace("/client");
         } catch (error) {
+          // Si algo sale mal, lo apuntamos en la consola para depuración
           console.error("No se pudo eliminar el cliente:", error);
+          // Y avisamos al usuario para que no se quede esperando
+          Alert.alert(
+            "Error",
+            "No se pudo eliminar el cliente. Verifica que no tenga pedidos pendientes o contacta con soporte.",
+          );
         }
       }
 
-      // Usamos una alerta distinta según si estamos en web o móvil
+      // Paso 2: Mostrar diálogo de confirmación.
+      // En la WEB usamos window.confirm (el típico cuadro del navegador).
       if (Platform.OS === "web") {
         const ok = window.confirm(
           "Eliminar cliente\n\nEsta acción no se puede deshacer.",
         );
+        // Si el usuario pulsa "Aceptar", ejecutamos el borrado.
         if (ok) {
           void confirmDelete();
         }
         return;
       }
 
+      // En MÓVIL usamos Alert.alert, que muestra un diálogo nativo
+      // con botones de "Cancelar" y "Eliminar".
       Alert.alert("Eliminar cliente", "Esta acción no se puede deshacer.", [
         { text: "Cancelar", style: "cancel" },
         {
@@ -140,15 +239,17 @@ export default function useClientDetail() {
         },
       ]);
     },
-    [canDelete, clientId, isValidId, queryClient, router],
+    [canDelete, clientId, queryClient, router],
   );
 
+  // Devolvemos todos los datos y funciones que la pantalla de detalle necesita para funcionar correctamente.
   return {
     client,
     loading,
     isError,
     error,
     pedidosCliente,
+    titleMap,
     navItems,
     handleEdit,
     handleDelete,

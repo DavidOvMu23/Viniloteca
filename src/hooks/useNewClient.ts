@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
-import { TextInput, type TextInputProps } from "react-native-paper";
+import { type TextInputProps } from "react-native-paper";
 import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
@@ -10,34 +10,29 @@ import { createClient } from "src/services/clientService";
 import { clientsQueryKey } from "src/hooks/queries/queryKeys";
 
 export default function useNewClient() {
-  // Usamos el router para volver o ir al detalle
   const router = useRouter();
   const user = useUserStore((state) => state.user);
-  const isAdmin = user?.roleName === "ADMIN";
+  const isAdmin = user?.roleName === "SUPERVISOR";
   const { colors, isDark } = useThemePreference();
   const queryClient = useQueryClient();
-  // Guardamos los estados del formulario que vienen de los inputs
+
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [nif, setNif] = useState("");
 
-  // Bloqueamos el guardado si no hay nombre
   const isSaveDisabled = useMemo(() => !nombre.trim(), [nombre]);
 
-  // Creamos el cliente con lo que escribimos en el formulario
   const handleSave = useCallback(
     async function handleSave() {
-      // Si no es admin, ignoramos la acción aunque el botón estuviera oculto
       if (!isAdmin) return;
       try {
         const nuevo = await createClient({
-          nombre: nombre.trim(),
+          full_name: nombre.trim(),
           email: email.trim() || undefined,
-          telefono: telefono.trim() || undefined,
-          nifCif: nif.trim() || undefined,
-          activo: true,
+          avatar_url: undefined,
         });
+
         await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
         router.replace(`/client/${nuevo.id}`);
       } catch (error) {
@@ -49,19 +44,9 @@ export default function useNewClient() {
         );
       }
     },
-    [
-      email,
-      isAdmin,
-      isSaveDisabled,
-      nif,
-      nombre,
-      queryClient,
-      router,
-      telefono,
-    ],
+    [isAdmin, nombre, email, queryClient, router],
   );
 
-  // Cancelamos y volvemos atrás
   const handleCancel = useCallback(
     function handleCancel() {
       router.back();
@@ -69,21 +54,18 @@ export default function useNewClient() {
     [router],
   );
 
-  // Definimos la barra inferior con Clientes activo
   const goHome = useCallback(
     function goHome() {
-      router.push("/home");
+      router.push("/reservas");
     },
     [router],
   );
-
   const goClients = useCallback(
     function goClients() {
       router.push("/client");
     },
     [router],
   );
-
   const goDiscos = useCallback(
     function goDiscos() {
       router.push("/discos");
@@ -94,10 +76,10 @@ export default function useNewClient() {
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       {
-        icon: "home-outline",
-        label: "Home",
+        icon: "calendar-outline",
+        label: "Reservas",
         onPress: goHome,
-        href: "/home",
+        href: "/reservas",
       },
       {
         icon: "disc-outline",
@@ -119,12 +101,10 @@ export default function useNewClient() {
   );
 
   useEffect(() => {
-    // Guardia adicional: si no eres admin, redirigimos fuera de esta ruta
     if (isAdmin) return;
     router.replace("/client");
   }, [isAdmin, router]);
 
-  // Compartimos estilos base para los TextInput, adaptados a tema para que no encandilen en oscuro
   const fieldBackground = isDark ? "#111b2a" : "#f8fafc";
   const placeholderColor = isDark ? "rgba(179,192,207,0.72)" : "#9ca3af";
 

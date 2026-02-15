@@ -1,36 +1,35 @@
-// No conseguia hacer el bottom bar como quería y me parecía una completa fumada
-// y no consegua haerlo por que era algo demasiado avanzado, entonces le pedí ayuda al chatGPT
+//este archivo crea el componente BottomNav, que es la barra de navegación inferior de la app con las pestañas para ir a Inicio, Perfil, etc. Es un componente reutilizable que se puede usar en varias pantallas.
+
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 import { useThemePreference } from "src/providers/ThemeProvider";
 
-// Definimos el tipo de cada elemento de la barra inferior
 export type BottomNavItem = {
+  // El nombre del icono (por ejemplo "home", "person", "disc").
   icon: React.ComponentProps<typeof Ionicons>["name"];
+  // El texto que aparece debajo del icono (por ejemplo "Inicio").
   label: string;
+  // (Opcional) Función que se ejecuta al pulsar la pestaña.
   onPress?: () => void;
+  // (Opcional) Si es true, la pestaña se muestra resaltada (la que está seleccionada).
   active?: boolean;
+  // (Opcional) La ruta a la que navega al pulsarla (por ejemplo "/home").
   href?: Href;
 };
 
-// Componente de barra de navegación inferior con pestañas y botón flotante
 interface Props {
+  // Lista de pestañas que se mostrarán en la barra (cada una con su icono y texto).
   items: BottomNavItem[];
-  fabIcon?: React.ComponentProps<typeof Ionicons>["name"];
-  onFabPress?: () => void;
-  showFab?: boolean;
 }
-// Componente funcional que representa la barra de navegación inferior
-export default function BottomNav({
-  items,
-  fabIcon = "add",
-  onFabPress,
-  showFab = true,
-}: Props) {
+
+// El componente BottomNav muestra una barra de navegación fija en la parte inferior de la pantalla con varias pestañas (Inicio, Perfil, etc.). Cada pestaña puede tener un icono, un texto, una acción al pulsar y una ruta a la que navegar.
+export default function BottomNav({ items }: Props) {
+  // Obtenemos los colores del tema actual para usarlos en el diseño de la barra y las pestañas
   const { colors, isDark } = useThemePreference();
-  // Colores de tabs: activo con contraste, inactivo suavizado para que destaque el seleccionado
+
+  // Definimos los colores para las pestañas activas e inactivas según el tema (claro u oscuro)
   const activeColor = isDark ? "#ffffff" : "#0f172a";
   const inactiveColor = isDark
     ? "rgba(255,255,255,0.58)"
@@ -38,39 +37,28 @@ export default function BottomNav({
 
   return (
     <>
-      {/* Mostramos el botón flotante si lo necesitamos*/}
-      {showFab && (
-        <View style={styles.fabContainer}>
-          <TouchableOpacity
-            style={[
-              styles.fab,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-            onPress={onFabPress}
-          >
-            <Ionicons name={fabIcon} size={26} color={colors.text} />
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {/* Pintamos la barra inferior con las pestañas */}
       <View
         style={[
           styles.tabBar,
           { backgroundColor: colors.primary, borderColor: colors.border },
         ]}
       >
+        {/* Recorremos cada pestaña y la dibujamos una por una */}
         {items.map((item) => {
-          // Cambiamos el color si la pestaña está activa
+          // Elegimos el color según si la pestaña está activa o no
           const color = item.active ? activeColor : inactiveColor;
+
+          // Contenido visual de cada pestaña: icono arriba + texto abajo
           const content = (
             <View style={styles.tabItem}>
+              {/* Icono de la pestaña (casita, persona, disco…) */}
               <Ionicons name={item.icon} size={24} color={color} />
+              {/* Texto debajo del icono ("Inicio", "Perfil"…) */}
               <Text style={[styles.tabLabel, { color }]}>{item.label}</Text>
             </View>
           );
 
-          // Usamos Link si nos pasan href
+          // ── Caso 1: la pestaña tiene una ruta href ──
           if (item.href) {
             return (
               <Link key={item.label} href={item.href} asChild>
@@ -81,7 +69,7 @@ export default function BottomNav({
             );
           }
 
-          // Usamos onPress manual si no hay href
+          // ── Caso 2: la pestaña tiene una función onPress ──
           return (
             <TouchableOpacity
               key={item.label}
@@ -98,47 +86,32 @@ export default function BottomNav({
   );
 }
 
+// Estilos del componente BottomNav, usando StyleSheet de React Native para mantener el código organizado y separado de la lógica.
 const styles = StyleSheet.create({
+  // Estilo de la barra inferior completa
   tabBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 82,
-    borderTopWidth: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingBottom: 12,
+    position: "absolute", // Se queda fija en la pantalla, no se mueve al hacer scroll
+    left: 0, // Pegada al borde izquierdo
+    right: 0, // Pegada al borde derecho
+    bottom: 0, // Pegada al borde inferior
+    height: 82, // Altura de la barra en píxeles
+    borderTopWidth: 1, // Línea finita arriba de la barra como separador
+    flexDirection: "row", // Las pestañas se colocan en fila (horizontal)
+    alignItems: "center", // Centradas verticalmente dentro de la barra
+    justifyContent: "space-evenly", // Repartidas equitativamente en el espacio
+    borderTopLeftRadius: 18, // Esquina superior izquierda redondeada
+    borderTopRightRadius: 18, // Esquina superior derecha redondeada
+    paddingBottom: 12, // Un poco de espacio extra abajo (para móviles con muesca)
   },
+  // Estilo de cada pestaña individual (icono + texto)
   tabItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 2,
-    flex: 1,
+    alignItems: "center", // Icono y texto centrados horizontalmente
+    justifyContent: "center", // Centrados verticalmente
+    gap: 2, // Pequeño espacio entre el icono y el texto
+    flex: 1, // Cada pestaña ocupa el mismo ancho
   },
+  // Estilo del texto debajo de cada icono
   tabLabel: {
-    fontSize: 12,
-  },
-  fabContainer: {
-    position: "absolute",
-    right: 18,
-    bottom: 98,
-    zIndex: 5,
-  },
-  fab: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 4,
+    fontSize: 12, // Tamaño de letra pequeñito
   },
 });

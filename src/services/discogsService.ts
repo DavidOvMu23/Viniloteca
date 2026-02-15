@@ -1,49 +1,60 @@
-// Busca discos en Discogs y devuelve directamente la lista de resultados
-export async function searchDiscogs(query: string): Promise<any[]> {
-  // 1) Limpiamos espacios para no enviar búsquedas vacías
-  const trimmedQuery = query.trim();
-  // 2) Si no queda texto, devolvemos un array vacío y salimos
-  if (!trimmedQuery) return [];
+// Este archivo se encarga de conectar con la API de Discogs para buscar discos
 
-  // 3) Leemos el token público desde el .env
-  const token = process.env.EXPO_PUBLIC_DISCOGS_TOKEN;
-  // 4) Si no hay token, cortamos con un error claro para el dev
-  if (!token) {
-    throw new Error("Falta el token de Discogs (EXPO_PUBLIC_DISCOGS_TOKEN)");
+// Función principal de búsqueda
+export async function searchDiscogs(query: string): Promise<any[]> {
+  //quitamos espacios sobrantes de la búsqueda
+  const textoBuscado = query.trim();
+
+  //Si no escribió nada, no hacemos nada
+  if (textoBuscado === "") {
+    return [];
   }
 
-  // 5) Construimos la URL con la query codificada
-  const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(
-    trimmedQuery,
-  )}&type=release`;
+  // Declaramos el token de Discogs
+  const token = process.env.EXPO_PUBLIC_DISCOGS_TOKEN;
 
+  // Construimos la URL de búsqueda.
+  // La url al final es como si estuviéramos escribiendo en el navegador:
+  // https://api.discogs.com/database/search?q=beatles&type=release&token=MI_TOKEN
+  // pero con el texto que el usuario escribió en lugar de "beatles" y nuestro token real para poder usar la API.
+
+  // encodeURIComponent es para convertir caracteres raros en algo que se pueda poner en una URL
+  const url = `https://api.discogs.com/database/search?q=${encodeURIComponent(
+    textoBuscado,
+  )}&type=release&token=${encodeURIComponent(token || "")}`;
+
+  // hacemos la petición a la API
   try {
-    // 6) Hacemos la petición HTTP a la API de Discogs
-    const response = await fetch(url, {
-      // 7) Enviamos headers obligatorios para que Discogs acepte la llamada
+    // Fetch es la función nativa de JavaScript para hacer peticiones a servidores.
+    const respuesta = await fetch(url, {
       headers: {
-        // 8) Discogs exige el token en este formato exacto
-        Authorization: `Discogs token=${token}`,
-        // 9) También exige un User-Agent identificando la app
-        "User-Agent": "viniloteca/1.0",
+        Accept: "application/json", //Le decimos a la api que nos retorne los datos en formeto JSON
       },
     });
 
-    // 10) Si la respuesta HTTP no es OK, lanzamos un error controlado
-    if (!response.ok) {
-      throw new Error(`Discogs devolvió ${response.status}`);
+    // Comprobamos si la respuesta fue correcta
+    if (!respuesta.ok) {
+      // Si la API nos dice que hemos hecho demasiadas peticiones, le decimos al usuario que espere un momento.
+      if (respuesta.status === 429) {
+        throw new Error("Discogs está saturado. Espera un momento.");
+      }
+
+      // Cualquier otro error
+      throw new Error(`Error de Discogs: Código ${respuesta.status}`);
     }
 
-    // 11) Convertimos el body a JSON
-    const data = await response.json();
-    // 12) Aseguramos que devolvemos siempre un array
-    const results = Array.isArray(data?.results) ? data.results : [];
-    // 13) Entregamos los resultados al llamador
-    return results;
+    // Leemos los datos que nos devuelve la API.
+    const datos = await respuesta.json();
+
+    // Filtramos los resultados para quedarnos solo con los que tengan portada (cover_image) y título (title)
+    // y los guardamos en un array nuevo que devolveremos a la app
+    if (Array.isArray(datos.results)) {
+      return datos.results;
+    } else {
+      return []; // Si no hay array, devolvemos vacío
+    }
   } catch (error) {
-    // 14) Log para debug durante desarrollo
-    console.error("Discogs - fallo en fetch:", error);
-    // 15) Lanzamos un mensaje corto para mostrar en UI
+    console.error("Fallo buscando en Discogs:", error);
     throw new Error("No se pudo conectar con Discogs.");
   }
 }

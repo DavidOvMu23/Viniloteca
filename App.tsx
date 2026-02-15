@@ -1,28 +1,22 @@
+// Este archivo es el punto de entrada de nuestra aplicación. Es el primer código que se ejecuta cuando la app arranca.
+// Por eso, aquí configuramos cosas globales como la navegación (rutas) y las fuentes.
+
 import React from "react";
 import { ExpoRoot } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 
-// Entrada principal de la app: registra las rutas leyendo la carpeta app/
 export default function App() {
-  // Cargamos las fuentes de los iconos para evitar glyphs faltantes
-  const [fontsLoaded] = useFonts({ ...Ionicons.font });
+  // Cargamos las fuentes de Ionicons (para los íconos)
+  const [fontsLoaded] = useFonts({
+    ...Ionicons.font,
+  });
 
-  // Le digo a Expo Router dónde buscar las pantallas
-  const ctx = (
-    require as unknown as {
-      context: (path: string, recursive?: boolean, regExp?: RegExp) => unknown;
-    }
-  ).context("./app");
+  // Con esto le indicamos a Expo en que directorio buscar las pantallas
+  // Y lo que hará es generar automáticamente rutas de navegacion basadas en la estructura de archivos dentro de "app".
+  // De esta forma será mas facil la gestion y navegacion entre pantallas.
+  const ctx = (require as any).context("./app");
 
-  if (!fontsLoaded) {
-    return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
-
+  // Le pasamos a expo la variable ctx que contiene toda la info de las pantallas (lo que he explicado arriba)
   return <ExpoRoot context={ctx} />;
 }

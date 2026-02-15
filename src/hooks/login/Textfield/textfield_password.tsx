@@ -1,38 +1,25 @@
-import React from "react";
-import { StyleSheet } from "react-native";
+// este archivo define un componente específico para el campo de contraseña en la pantalla de login.
+
 import TextField from "src/components/Inputs/TextField";
 
-// Creamos un campo de texto para la contraseña
+// Props que recibe el componente TextfieldPassword.
 interface TextfieldPasswordProps {
   value: string;
   onChangeText: (text: string) => void;
 }
 
-// Wrapper específico para password usando el TextField genérico
+// Componente específico para el campo de contraseña en la pantalla de login.
 export default function TextfieldPassword({
   value,
   onChangeText,
 }: TextfieldPasswordProps) {
   return (
     <TextField
-      value={value}
-      onChangeText={onChangeText}
-      placeholder="Contraseña"
-      secure
-      leftIcon="lock-outline"
+      value={value} // El valor actual del campo, controlado por el estado del padre.
+      onChangeText={onChangeText} // Función que se llama cuando el texto cambia, para actualizar el estado del padre.
+      placeholder="Contraseña" // Texto que se muestra cuando el campo está vacío, para guiar al usuario.
+      secure // Hace que el texto se oculte (aparecen puntos en lugar de caracteres) para proteger la privacidad de la contraseña.
+      leftIcon="lock-outline" // Icono de candado a la izquierda del campo, para indicar que es un campo de contraseña.
     />
   );
 }
-
-// Estilos (compatibilidad, no usados por el wrapper genérico)
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  input: {
-    fontSize: 15,
-  },
-  outline: {
-    borderRadius: 12,
-  },
-});

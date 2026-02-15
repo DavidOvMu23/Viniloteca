@@ -1,6 +1,9 @@
+// Lo que ve el usuario cuando NO está logueado.
+// Tiene un formulario de email + contraseña, botón de Google
+// y un enlace para ir a la pantalla de registro.
+
 import React from "react";
 import { View, StyleSheet, Text, ActivityIndicator, Image } from "react-native";
-// Quitamos el candado y ponemos el logo de la Viniloteca
 import TextfieldEmail from "../src/hooks/login/Textfield/textfield_email";
 import TextfieldPassword from "../src/hooks/login/Textfield/textfield_password";
 import TextButton from "../src/components/Buttons/text_button";
@@ -10,29 +13,33 @@ import useLogin from "../src/hooks/useLogin";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useRouter } from "expo-router";
 
+// La pantalla de login
 export default function Login() {
+  // router nos permite movernos a otras pantallas (por ejemplo, a /signup)
   const router = useRouter();
+  // Sacamos del hook useLogin todas las variables y funciones que necesitamos para el formulario
   const {
     email,
     password,
     isLoginDisabled,
-    isSubmitting, // estado de envío para mostrar loader
-    error, // error de login para mostrar mensaje
+    isSubmitting,
+    error,
     handleEmailChange,
     handlePasswordChange,
     handleSubmit,
   } = useLogin();
 
-  // Obtenemos los colores y si está en modo oscuro
+  // Sacamos los colores del tema y si estamos en modo oscuro
   const { colors, isDark } = useThemePreference();
 
+  // Función que nos lleva a la pantalla de registro
   function handleGoSignup() {
     router.push("/signup");
   }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Mostramos el logo principal de la Viniloteca */}
+      {/* Logo de La Viniloteca — cambia según modo claro/oscuro */}
       <View style={{ alignItems: "center", width: "100%", marginTop: 32 }}>
         <Image
           source={
@@ -50,19 +57,21 @@ export default function Login() {
         />
       </View>
 
+      {/* Título y subtítulo de bienvenida */}
       <Text style={[styles.title, { color: colors.text }]}>Bienvenido</Text>
       <Text style={[styles.subtitle, { color: colors.muted }]}>
         Introduce tus credenciales para continuar
       </Text>
 
+      {/* Formulario de login */}
       <View style={styles.formContainer}>
+        {/* Campo de email: lo que escribas se guarda en "email" vía handleEmailChange */}
         <Text style={[styles.label, { color: colors.muted }]}>
           Correo Electrónico
         </Text>
-
-        {/* Conectamos el input con el estado `email` */}
         <TextfieldEmail value={email} onChangeText={handleEmailChange} />
 
+        {/* Etiqueta de contraseña + enlace de "olvidé mi contraseña" */}
         <View style={styles.passwordLabelContainer}>
           <Text style={[styles.label, { color: colors.muted }]}>
             Contraseña
@@ -70,32 +79,32 @@ export default function Login() {
           <TextButton text="¿Olvidaste tu contraseña?" />
         </View>
 
-        {/* Conectamos el input con el estado `password` */}
+        {/* Campo de contraseña: lo que escribas se guarda en "password" */}
         <TextfieldPassword
           value={password}
           onChangeText={handlePasswordChange}
         />
 
-        {/* Activamos el botón solo si `email` y `password` tienen contenido */}
+        {/* Botón de iniciar sesión:
+            - Desactivado (gris) si email o password están vacíos
+            - Cambia su texto a "Iniciando..." mientras enviamos al servidor */}
         <Button
-          // Cambiamos el texto del botón según isSubmitting
           text={isSubmitting ? "Iniciando..." : "Iniciar Sesión"}
           disabled={isLoginDisabled}
-          // handleSubmit viene del hook y delega en el AuthProvider
           onPress={handleSubmit}
         />
 
-        {/* Mostramos errores devueltos por el hook (login fallido) */}
+        {/* Si el login falla, mostramos el mensaje de error en rojo */}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {/* Mientras isSubmitting está activo enseñamos un loader adicional */}
+        {/* Ruedita de carga mientras esperamos respuesta del servidor */}
         {isSubmitting ? (
           <View style={styles.progress}>
             <ActivityIndicator />
           </View>
         ) : null}
 
-        {/* Ponemos un separador para separar el login normal del de Google */}
+        {/* Línea separadora con texto "O continúa con" */}
         <View style={[styles.dividerContainer, { marginTop: 30 }]}>
           <View style={[styles.line, { backgroundColor: colors.border }]} />
           <Text style={[styles.dividerText, { color: colors.muted }]}>
@@ -104,10 +113,10 @@ export default function Login() {
           <View style={[styles.line, { backgroundColor: colors.border }]} />
         </View>
 
-        {/* Mostramos el botón de login con Google */}
+        {/* Botón de login con Google */}
         <GoogleButton text="Google" />
 
-        {/* Mostramos el botón de texto para registrarse */}
+        {/* Enlace para ir a la pantalla de registro */}
         <View style={styles.signupContainer}>
           <Text style={[styles.signupText, { color: colors.muted }]}>
             ¿No tienes una cuenta?
@@ -119,52 +128,63 @@ export default function Login() {
   );
 }
 
+// Estilos de la pantalla de login
 const styles = StyleSheet.create({
+  // Contenedor principal: ocupa toda la pantalla y centra su contenido
   container: {
-    flex: 1, // Usamos flex para ocupar toda la pantalla
-    alignItems: "center", // Centramos en horizontal
-    justifyContent: "center", // Centramos en vertical y horizontal
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  // Título grande "Bienvenido"
   title: {
     fontSize: 20,
     marginTop: 20,
     marginBottom: 8,
     fontWeight: "bold",
   },
+  // Texto pequeño debajo del título
   subtitle: {
     fontSize: 15,
     marginBottom: 30,
   },
+  // Caja que envuelve todos los campos del formulario
   formContainer: {
     width: "100%",
     paddingHorizontal: 20,
   },
+  // Etiqueta encima de cada campo ("Correo", "Contraseña")
   label: {
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
     marginLeft: 4,
   },
+  // Contenedor de la línea separadora "─ O continúa con ─"
   dividerContainer: {
-    flexDirection: "row", // Usamos fila para alinear elementos
+    flexDirection: "row",
     alignItems: "center",
     marginTop: 16,
     marginBottom: 16,
-    gap: 12, // Dejamos espacio entre elementos
+    gap: 12,
   },
+  // Línea horizontal del separador
   line: {
     flex: 1,
     height: 1,
   },
+  // Texto "O continúa con"
   dividerText: {
     fontSize: 13,
   },
+  // Fila con "Contraseña" a la izquierda y "¿Olvidaste?" a la derecha
   passwordLabelContainer: {
-    flexDirection: "row", // Usamos fila para alinear textos
-    justifyContent: "space-between", // Separamos los textos
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
+  // Fila inferior con "¿No tienes cuenta?" + "Regístrate ahora"
   signupContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -176,12 +196,14 @@ const styles = StyleSheet.create({
   signupText: {
     fontSize: 14,
   },
+  // Mensaje de error en rojo
   errorText: {
     color: "#b91c1c",
     marginTop: 12,
     textAlign: "center",
     fontWeight: "600",
   },
+  // Contenedor de la ruedita de carga
   progress: {
     marginTop: 12,
     alignItems: "center",

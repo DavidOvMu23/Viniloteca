@@ -1,271 +1,200 @@
-import { supabase } from "supabase/supabaseClient";
-import { type RoleName, type UserProfile } from "src/stores/userStore";
+// Aquí tenemos todas las funciones relacionadas con la autenticación
 
+import { supabase } from "../../supabase/supabaseClient";
+import { type RoleName, type UserProfile } from "../stores/userStore";
+
+// Cuando iniciamos sesión, devolvemos esto:
 export type AuthResult = {
-  user: UserProfile;
+  user: UserProfile; // La ficha completa del usuario
 };
 
-export type SignUpResult = {
-  needsEmailConfirmation: boolean;
-};
+// Cuando nos registramos, devolvemos esto:
+export type SignUpResult = {};
 
-type DbProfile = {
-  id: string;
-  full_name: string | null;
-  created_at: string;
-  avatar_url?: string | null;
-  role?: string | null;
-};
-
-type AuthCompatResponse<TData> = {
-  data: TData;
-  error: { message?: string } | null;
-};
-
-type AuthCompatClient = {
-  signInWithPassword: (credentials: {
-    email: string;
-    password: string;
-  }) => Promise<
-    AuthCompatResponse<{
-      user: {
-        id: string;
-        email?: string | null;
-        user_metadata?: { full_name?: unknown };
-      } | null;
-    }>
-  >;
-  signUp: (credentials: {
-    email: string;
-    password: string;
-    options?: { data?: { full_name?: string } };
-  }) => Promise<
-    AuthCompatResponse<{
-      user: {
-        id: string;
-        identities?: unknown[];
-      } | null;
-      session: unknown | null;
-    }>
-  >;
-  signOut: () => Promise<unknown>;
-  getSession: () => Promise<
-    AuthCompatResponse<{
-      session: {
-        user: {
-          id: string;
-          email?: string | null;
-          user_metadata?: { full_name?: unknown };
-        };
-      } | null;
-    }>
-  >;
-};
-
-const authClient = supabase.auth as unknown as AuthCompatClient;
-
-const DEFAULT_AVATAR_BASE =
-  "https://ui-avatars.com/api/?background=E5E7EB&color=111827&size=256&name=";
-
+// Funcion para crar un avatar por defecto usando la primera letra del nombre
 function buildDefaultAvatar(name: string) {
-  const trimmed = name.trim();
-  const initial = trimmed ? trimmed[0] : "U";
-  return `${DEFAULT_AVATAR_BASE}${encodeURIComponent(initial)}`;
+  const cleanName = name.trim();
+
+  let initial = "";
+  if (cleanName.length > 0) {
+    initial = cleanName[0]; // Cogemos la primera letra del nombre
+  }
+
+  // Construimos la URL mágica usando una herramienta llamada "ui-avatars" que genera avatares con letras
+  return `https://ui-avatars.com/api/?background=E5E7EB&color=111827&size=256&name=${encodeURIComponent(initial)}`;
 }
 
-function mapProfile(
-  profile: DbProfile | null,
-  email: string,
-  fallbackName = "",
-): UserProfile {
-  const rawRole = (profile as DbProfile | null)?.role ?? null;
-  const roleName: RoleName = rawRole === "ADMIN" ? "ADMIN" : "NORMAL";
-  const safeName = profile?.full_name || fallbackName || "Usuario";
-  const avatarPath = profile?.avatar_url ?? null;
-  const isFullUrl =
-    typeof avatarPath === "string" && avatarPath.startsWith("http");
-  const avatarUrl = avatarPath
-    ? isFullUrl
-      ? avatarPath
-      : supabase.storage.from("avatars").getPublicUrl(avatarPath).data.publicUrl
-    : buildDefaultAvatar(safeName);
-  return {
-    id: profile?.id ?? "",
-    roleName,
-    name: safeName,
-    email,
-    avatarUrl,
-  };
+// Función para normalizar el rol del usuario, asegurando que siempre sea "SUPERVISOR" o "NORMAL"
+function normalizarRol(rolSucio: any): RoleName {
+  if (typeof rolSucio === "string") {
+    const rolMayus = rolSucio.toUpperCase();
+
+    if (rolMayus === "SUPERVISOR") {
+      return "SUPERVISOR";
+    }
+  }
+
+  // Si no es supervisor (o es null), por defecto es NORMAL.
+  return "NORMAL";
 }
 
-function buildFallbackUserProfile(
-  userId: string,
-  email: string,
-  fallbackName = "",
-): UserProfile {
-  const safeName = fallbackName.trim() || email.split("@")[0] || "Usuario";
+// Funciones principales que exportamos para usar en la app
 
-  return {
-    id: userId,
-    roleName: "NORMAL",
-    name: safeName,
-    email,
-    avatarUrl: buildDefaultAvatar(safeName),
-  };
-}
-
+// Funcion para iniciar sesión con email y contraseña
 export async function loginWithEmail(
   email: string,
   password: string,
 ): Promise<AuthResult> {
-  // Limpiamos espacios del email para evitar errores por espacios invisibles
-  const safeEmail = email.trim();
+  //Limpiamos el email por si acaso
+  const cleanEmail = email.trim();
 
-  // Llamada a Supabase Auth para iniciar sesión con email y password
-  const { data, error } = await authClient.signInWithPassword({
-    email: safeEmail,
-    password,
+  // Preguntamos a Supabase (el servidor)
+  // "await" significa: espera aquí quieto hasta que el servidor responda.
+  const respuesta = await supabase.auth.signInWithPassword({
+    email: cleanEmail,
+    password: password,
   });
 
-  // Si Supabase devuelve error, lo propagamos tal cual
-  if (error) {
-    throw error;
+  // Comprobamos si hubo error
+  if (respuesta.error) {
+    throw respuesta.error;
   }
 
-  // Validamos que exista usuario en la respuesta
-  const user = data.user;
-  if (!user) {
-    throw new Error("No se pudo obtener el usuario autenticado.");
+  // Si no hay usuario en la respuesta, algo raro pasó
+  if (!respuesta.data.user) {
+    throw new Error("Error desconocido: No se recibieron datos del usuario.");
   }
 
-  // Intentamos leer el nombre guardado en los metadatos de auth
-  const metadataName =
-    typeof user.user_metadata?.full_name === "string"
-      ? user.user_metadata.full_name
-      : "";
+  // Ahora buscamos la ficha completa del usuario (con foto, nombre, etc.)
+  const usuarioLogueado = respuesta.data.user;
 
-  // Si el perfil no tiene nombre, lo completamos con el nombre real guardado en auth
-  if (metadataName) {
-    await supabase.from("profiles").upsert({
-      id: user.id,
-      full_name: metadataName,
-    });
-  }
-
-  // Buscamos el perfil completo en la tabla profiles
-  const profile = await getUserProfileById(
-    user.id,
-    user.email ?? safeEmail,
-    metadataName,
+  //Intentamos leer su ficha de la tabla 'profiles'
+  const perfil = await getUserProfileById(
+    usuarioLogueado.id,
+    cleanEmail,
+    "", // No sabemos el nombre aún
+    "NORMAL", // Rol por defecto
   );
 
+  // Devolvemos el usuario completo y feliz
   return {
-    user:
-      profile ??
-      buildFallbackUserProfile(user.id, user.email ?? safeEmail, metadataName),
+    user: perfil,
   };
 }
 
+// Función para registrarse con email y contraseña
 export async function signUpWithEmail(
   email: string,
   password: string,
   fullName: string,
 ): Promise<SignUpResult> {
-  // Normalizamos datos de entrada
-  const safeEmail = email.trim();
-  const safeName = fullName.trim();
+  const cleanEmail = email.trim();
+  const cleanName = fullName.trim();
 
-  // Llamada a Supabase Auth para registrar usuario
-  const { data, error } = await authClient.signUp({
-    email: safeEmail,
-    password,
+  // Guardamos el nombre para no perderlo.
+  const respuesta = await supabase.auth.signUp({
+    email: cleanEmail,
+    password: password,
     options: {
       data: {
-        full_name: safeName,
+        full_name: cleanName,
       },
     },
   });
 
-  // Si Supabase devuelve error, lo propagamos
-  if (error) {
-    throw error;
+  // Errores de registro
+  if (respuesta.error) {
+    throw respuesta.error;
   }
 
-  if (!data.user) {
-    throw new Error("No se pudo crear el usuario en Auth de Supabase.");
+  if (!respuesta.data.user) {
+    throw new Error("No se pudo crear el usuario. Inténtalo de nuevo.");
   }
 
+  // Si el usuario ya existía le indidicamos que inicie sesión en lugar de registrarse
   if (
-    Array.isArray(data.user.identities) &&
-    data.user.identities.length === 0
+    respuesta.data.user.identities &&
+    respuesta.data.user.identities.length === 0
   ) {
-    throw new Error(
-      "Este correo ya está registrado. Intenta iniciar sesión con esa cuenta.",
-    );
+    throw new Error("Este correo ya está registrado. Prueba a iniciar sesión.");
   }
 
-  // Intentamos guardar el nombre en profiles, sin bloquear el alta en Auth
+  // Si el registro fue exitoso, Supabase ya creó el usuario en la tabla "auth.users",
+  // pero no creó su perfil en la tabla "profiles". Lo hacemos nosotros ahora.
   await supabase.from("profiles").upsert({
-    id: data.user.id,
-    full_name: safeName,
+    id: respuesta.data.user.id,
+    full_name: cleanName,
+    email: cleanEmail,
   });
 
-  return {
-    needsEmailConfirmation: !data.session,
-  };
+  return {};
 }
 
+// Función para cerrar sesión
 export async function clearSession() {
-  await authClient.signOut();
+  await supabase.auth.signOut();
 }
 
+// Función para restaurar la sesión al iniciar la app (si el usuario ya estaba logueado)
 export async function restoreSession() {
-  // Recuperamos sesión actual desde Supabase
-  const { data, error } = await authClient.getSession();
-  if (error) {
+  const respuesta = await supabase.auth.getSession();
+
+  if (respuesta.error) {
     return null;
   }
-  return data.session;
+
+  return respuesta.data.session;
 }
 
+// Función para obtener la ficha completa de un usuario por su ID
 export async function getUserProfileById(
   userId: string,
-  fallbackEmail = "",
-  fallbackName = "",
+  emailFallback: string,
+  nameFallback: string,
+  roleFallback: RoleName = "NORMAL",
 ): Promise<UserProfile | null> {
-  // Pedimos el perfil al backend
-  const { data, error } = await supabase
+  // Pedimos los datos a la tabla
+  const consulta = await supabase
     .from("profiles")
-    .select("id, full_name, created_at, avatar_url, role")
-    .eq("id", userId)
-    .single();
+    .select("*") // Traeme TODO
+    .eq("id", userId) //donde el ID sea este.
+    .single(); // Solo espero un resultado.
 
-  // Si hay error, intentamos estrategias de fallback
-  if (error) {
-    if (error.code === "PGRST116") {
-      return mapProfile(null, fallbackEmail, fallbackName);
-    }
+  // procesamos los datos
+  const datos = consulta.data;
 
-    if (error.code === "42703" || error.message?.includes("avatar_url")) {
-      const fallback = await supabase
-        .from("profiles")
-        .select("id, full_name, created_at")
-        .eq("id", userId)
-        .single();
-
-      if (fallback.error && fallback.error.code !== "PGRST116") {
-        return null;
-      }
-
-      return mapProfile(
-        (fallback.data ?? null) as DbProfile | null,
-        fallbackEmail,
-        fallbackName,
-      );
-    }
-
-    return null;
+  // Aseguramos el nombre
+  let nombreFinal = datos.full_name;
+  if (!nombreFinal) {
+    nombreFinal = nameFallback || "Usuario";
   }
 
-  return mapProfile(data ?? null, fallbackEmail, fallbackName);
+  // Aseguramos el rol
+  const rolFinal = normalizarRol(datos.role);
+
+  // Aseguramos el avatar
+  let avatarFinal = datos.avatar_url;
+  if (!avatarFinal) {
+    // si no tiene foto generamos una con su inicial
+    avatarFinal = buildDefaultAvatar(nombreFinal);
+  } else {
+    // Si tiene foto, comprobamos si es una URL completa
+    // o una ruta interna de Supabase Storage.
+    if (!avatarFinal.startsWith("http")) {
+      // Le pedimos a Supabase la URL pública para poder verla.
+      const urlPublica = supabase.storage
+        .from("avatars")
+        .getPublicUrl(avatarFinal);
+      avatarFinal = urlPublica.data.publicUrl;
+    }
+  }
+
+  // Devolvemos la ficha limpia y perfecta
+  return {
+    id: datos.id,
+    name: nombreFinal,
+    email: datos.email || emailFallback,
+    roleName: rolFinal,
+    avatarUrl: avatarFinal,
+  };
 }

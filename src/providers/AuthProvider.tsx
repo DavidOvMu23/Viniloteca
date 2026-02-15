@@ -1,3 +1,5 @@
+// AuthProvider.tsx — Proveedor de autenticación de la aplicación
+
 import React, {
   createContext,
   useCallback,
@@ -6,17 +8,27 @@ import React, {
   useMemo,
   useState,
 } from "react";
+
+// Funciones que hablan con el backend para:
 import {
   clearSession,
   getUserProfileById,
   loginWithEmail,
   restoreSession,
 } from "src/services/auth";
+
+// Es la conexión directa con nuestra base de datos en la nube.
+// Lo usamos aquí puntualmente para actualizar la tabla "profiles".
 import { supabase } from "supabase/supabaseClient";
+
+// useUserStore es un almacén donde guardamos los datos
+// del usuario de forma global: nombre, email, avatar, etc.
+// UserProfile es tipo que describe la forma de esos datos.
 import { useUserStore, type UserProfile } from "src/stores/userStore";
 
-export type AuthStatus = "checking" | "authenticated" | "unauthenticated";
+export type AuthStatus = "checking" | "authenticated" | "unauthenticated"; // define los posibles estados de autenticación
 
+//interfaz para el valor que se escribirá en el contexto de autenticación
 interface AuthContextValue {
   status: AuthStatus;
   user: UserProfile | null;
@@ -26,80 +38,92 @@ interface AuthContextValue {
   refreshSession: () => Promise<void>;
 }
 
+// Función para normalizar el rol del usuario, asegurando que solo sea "SUPERVISOR" o "NORMAL".
+function parseRoleName(rawRole: unknown): "SUPERVISOR" | "NORMAL" {
+  if (typeof rawRole !== "string") return "NORMAL";
+  const normalized = rawRole.trim().toUpperCase();
+  return normalized === "SUPERVISOR" ? "SUPERVISOR" : "NORMAL";
+}
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // Estado global de auth: guardamos al usuario en un store global y controlamos el estado general
   const { user, setUser, clearUser } = useUserStore();
   const [status, setStatus] = useState<AuthStatus>("checking");
   const [isBusy, setIsBusy] = useState(false);
-
-  // Revisamos almacenamiento local al arrancar para restaurar sesión
   const bootstrap = useCallback(async () => {
-    // 1) Marcamos que estamos verificando la sesión
     setStatus("checking");
     try {
-      // 2) Recuperamos la sesión guardada en el dispositivo
       const session = await restoreSession();
       if (!session?.user) {
-        // 3) Si no hay sesión, limpiamos estado y salimos
         clearUser();
         setStatus("unauthenticated");
         return;
       }
-
-      // 4) Intentamos leer el nombre guardado en metadata de auth
       const metadataName =
         typeof session.user.user_metadata?.full_name === "string"
           ? session.user.user_metadata.full_name
           : "";
-
-      // 5) Si hay nombre, lo guardamos en profiles para mantenerlo sincronizado
+      const metadataRole = parseRoleName(
+        (session.user.user_metadata as Record<string, unknown> | undefined)
+          ?.role,
+      );
+      const appMetadataRole = parseRoleName(
+        (session.user as { app_metadata?: Record<string, unknown> })
+          .app_metadata?.role,
+      );
+      const fallbackRole =
+        metadataRole === "SUPERVISOR" || appMetadataRole === "SUPERVISOR"
+          ? "SUPERVISOR"
+          : "NORMAL";
       if (metadataName) {
-        await supabase.from("profiles").upsert({
-          id: session.user.id,
-          full_name: metadataName,
-        });
+        try {
+          await supabase.from("profiles").upsert({
+            id: session.user.id,
+            full_name: metadataName,
+            email: session.user.email ?? "",
+          });
+        } catch {}
       }
-
-      // 6) Pedimos el perfil completo al backend
       const profile = await getUserProfileById(
         session.user.id,
         session.user.email ?? "",
         metadataName,
+        fallbackRole,
       );
       if (!profile) {
-        // 7) Si no hay perfil, cerramos sesión y limpiamos estado
-        await clearSession();
-        clearUser();
-        setStatus("unauthenticated");
+        const email = session.user.email ?? "";
+        const fallbackName = metadataName || email.split("@")[0] || "Usuario";
+
+        setUser({
+          id: session.user.id,
+          roleName: fallbackRole,
+          name: fallbackName,
+          email,
+        });
+        setStatus("authenticated");
         return;
       }
-
-      // 8) Guardamos el usuario y marcamos autenticado
       setUser(profile);
       setStatus("authenticated");
     } catch {
-      // 9) Si algo falla, dejamos el estado como no autenticado
-      await clearSession();
       clearUser();
       setStatus("unauthenticated");
     }
   }, [clearUser, setUser]);
 
   useEffect(() => {
-    // Lanzamos la comprobación inicial una sola vez al montar el proveedor
     void bootstrap();
   }, [bootstrap]);
 
-  // Login simulado: guarda token mock y actualiza store global
   const login = useCallback(
     async (email: string, password: string) => {
-      // Recibimos email y password desde el hook de login; devolvemos error si las credenciales son malas
       if (isBusy) return;
+
       setIsBusy(true);
       try {
         const result = await loginWithEmail(email, password);
+
         setUser(result.user);
         setStatus("authenticated");
       } catch (error) {
@@ -112,21 +136,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [isBusy, setUser],
   );
 
-  // Logout limpio: borra storage y resetea usuario
+  // ── logout — Función para cerrar sesión ───────────────────────────
+  // Borra la sesión del almacenamiento local del teléfono y vacía
+  // el almacén global (user = null). Así cualquier pantalla que
+  // dependa del usuario detectará que ya no hay nadie logueado y
+  // redirigirá automáticamente a la pantalla de login.
+  //
+  // useCallback memoriza la función; solo se re-crea si cambian
+  // clearUser o isBusy.
   const logout = useCallback(async () => {
     // Evitamos doble logout si ya hay una acción en curso
     if (isBusy) return;
+
+    // Activamos el indicador de "ocupado"
     setIsBusy(true);
     try {
-      // Limpiamos storage + store para que cualquier pantalla redirija a login
+      // Borramos la sesión del almacenamiento local del dispositivo
       await clearSession();
+
+      // Vaciamos el almacén global del usuario
       clearUser();
+
+      // Marcamos el estado como "sin autenticar"
       setStatus("unauthenticated");
     } finally {
+      // Pase lo que pase, quitamos el indicador de "ocupado"
       setIsBusy(false);
     }
   }, [clearUser, isBusy]);
 
+  // ── value — Objeto que se escribe en la "pizarra" ─────────────────
+  // Reunimos todo lo que queremos compartir (estado + funciones) en
+  // un solo objeto. useMemo evita recrear este objeto en cada render;
+  // solo lo recalcula si alguna de sus dependencias cambia.
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
@@ -139,14 +181,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [bootstrap, isBusy, login, logout, status, user],
   );
 
+  // ── Renderizado ───────────────────────────────────────────────────
+  // Devolvemos el Provider (el "marco") que envuelve a todos los hijos.
+  // El atributo "value" es lo que se escribe en la pizarra: cualquier
+  // componente hijo que use useAuth() recibirá este objeto.
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// =====================================================================
+// useAuth — Hook personalizado para LEER la pizarra de autenticación
+// =====================================================================
+// Cualquier componente de la app puede llamar a useAuth() para obtener
+// el estado actual (¿hay usuario?, ¿está cargando?) y las funciones
+// de login/logout. Es un atajo cómodo sobre useContext(AuthContext).
+//
+// Si alguien intenta usar useAuth() fuera del AuthProvider (es decir,
+// sin que el Provider lo envuelva), lanzamos un error claro para que
+// el desarrollador sepa que falta el Provider en el árbol de componentes.
 export function useAuth() {
+  // Leemos el contenido de la pizarra (contexto)
   const ctx = useContext(AuthContext);
+
+  // Si el contexto es undefined, significa que este componente NO
+  // está dentro del AuthProvider → lanzamos un error descriptivo.
   if (!ctx) {
-    // Garantizamos que los hooks se usen dentro del provider; evitamos estados incoherentes
     throw new Error("useAuth debe usarse dentro de AuthProvider");
   }
+
+  // Devolvemos el objeto con status, user, isBusy, login, logout, etc.
   return ctx;
 }

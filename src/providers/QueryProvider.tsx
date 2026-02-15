@@ -1,3 +1,6 @@
+// Este archivo configura el sistema de caché de datos de React
+// Query para toda la app.
+
 import { PropsWithChildren, useEffect } from "react";
 import { AppState, Platform } from "react-native";
 import {
@@ -6,20 +9,25 @@ import {
   focusManager,
 } from "@tanstack/react-query";
 
+// Creamos una instancia del QueryClient con opciones por defecto.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // Cacheamos datos por 30s para evitar refetch innecesario (esto me lo ha recomendado el chat)
+      // staleTime: 30_000 → los datos se consideran frescos durante
+      // 30 000 milisegundos (30 segundos). Mientras estén frescos,
+      // React Query no vuelve a pedirlos al servidor.
       staleTime: 30_000,
     },
   },
 });
 
+// Componente QueryProvider
+// Recibe "children" (las pantallas hijas de la app) y las envuelve
+// con el QueryClientProvider para que todas puedan usar React Query.
 export function QueryProvider({ children }: PropsWithChildren) {
+  // este código se ejecuta una sola vez cuando el
+  // componente aparece en pantalla (la app se inicia).
   useEffect(function setupAppStateListener() {
-    // En web no usamos AppState
-    if (Platform.OS === "web") return;
-    // En móvil, sincronizamos foco de React Query con el estado de la app
     const subscription = AppState.addEventListener(
       "change",
       function onChange(status) {
