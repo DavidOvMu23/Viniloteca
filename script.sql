@@ -83,6 +83,8 @@ create table if not exists public.rentals (
   discogs_id bigint not null,
   user_id uuid not null references auth.users(id) on delete cascade,
 
+  operator_id uuid references auth.users(id) on delete set null,
+
   rented_at timestamptz not null default now(), 
   due_at timestamptz,                           
   returned_at timestamptz,                     
@@ -107,6 +109,7 @@ on public.rentals
 for insert
 with check (
   auth.uid() = user_id
+  OR public.is_supervisor(auth.uid())
 );
 
 
