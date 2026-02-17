@@ -33,11 +33,18 @@ export default function useClientList() {
   // useEffect para sincronizar la lista de clientes cada vez que cambian los datos del servidor o el usuario actual.
   useEffect(
     function syncItems() {
-      if (user?.id) {
-        setItems(clientes.filter((c) => c.id !== user.id));
-      } else {
-        setItems(clientes);
-      }
+      const nextItems = user?.id
+        ? clientes.filter((c) => c.id !== user.id)
+        : clientes;
+
+      // Evitar actualizaciones de estado si la lista no cambió
+      setItems((prev) => {
+        if (prev.length !== nextItems.length) return nextItems;
+        for (let i = 0; i < prev.length; i++) {
+          if (prev[i].id !== nextItems[i].id) return nextItems;
+        }
+        return prev;
+      });
     },
     [clientes, user?.id],
   );
