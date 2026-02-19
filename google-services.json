@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "503512511676",
+    "project_id": "viniloteca-dbd63",
+    "storage_bucket": "viniloteca-dbd63.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503512511676:android:80d63eb2f5e0e1ee948cb9",
+        "android_client_info": {
+          "package_name": "com.viniloteca.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTy7_XOZaShlQ99-5efe73SDqVGzy0sk8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

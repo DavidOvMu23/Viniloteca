@@ -4,12 +4,12 @@
     "slug": "viniloteca",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo-claro.png",
+    "icon": "./assets/logo-claro-square.png",
     "userInterfaceStyle": "light",
     "scheme": "viniloteca",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo-claro.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -17,8 +17,10 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.viniloteca.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo-claro-square.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true
@@ -27,7 +29,7 @@
       "favicon": "./assets/logo-claro.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router"],
+    "plugins": ["expo-router", "expo-notifications", "expo-font"],
     "extra": {
       "router": {},
       "eas": {
