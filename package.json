@@ -6,7 +6,9 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "docs": "npx typedoc --out docs src",
+    "docs:discogs": "npx typedoc --tsconfig tsconfig.docs.json --entryPoints src/services/discogsService.ts --exclude 'src/hooks/**' --out docs/discogs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -32,7 +34,20 @@
   "private": true,
   "devDependencies": {
     "@types/react": "~19.1.10",
+    "typedoc": "^0.28.17",
+    "typedoc-plugin-markdown": "^4.10.0",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "uglify-js": "^3.17.4",
+    "minimatch": "^10.2.1",
+    "glob": "^11.0.0",
+    "tar": "^7.5.8"
+  },
+  "resolutions": {
+    "minimatch": "^10.2.1",
+    "glob": "^11.0.0",
+    "tar": "^7.5.8",
+    "uglify-js": "^3.17.4"
   }
 }
-
