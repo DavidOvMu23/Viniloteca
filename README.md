@@ -2,7 +2,7 @@
 
 > Una app móvil minimalista para buscar discos, ver detalles y navegar tu colección favorita.
 
-![Viniloteca — placeholder banner](assets/logo-claro.png)
+<img src="assets/logo-claro.png" alt="Viniloteca — placeholder banner" width="480" />
 
 **Tecnologías:** React Native + Expo · TypeScript
 
