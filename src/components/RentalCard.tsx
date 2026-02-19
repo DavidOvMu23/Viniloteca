@@ -1,6 +1,6 @@
 // este archivo define el componente RentalCard, que muestra la información de una reserva de alquiler en la pantalla de detalle de cliente.
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,10 @@ interface RentalCardProps {
 
 // El componente RentalCard muestra la información de una reserva de alquiler,
 // incluyendo el título del disco, fechas, estado y una imagen. También tiene un botón para marcar la devolución.
+
+//para mostrar la informacion de la api lo que hacemos es usar la funcion que hay en el service llamada getReleaseById,
+// esta funcion se encarga de hacer la peticion a la api de discogs y devolver la informacion del disco,
+// esta informacion la usamos para mostrarla en la tarjeta de alquiler.
 export default function RentalCard({
   reservation,
   imageUrl,
@@ -35,6 +39,7 @@ export default function RentalCard({
 }: RentalCardProps) {
   // Estado local para saber si la IMAGEN (el jpg/png) se está descargando
   const [isImageLoading, setIsImageLoading] = useState(true);
+  const [isImageError, setIsImageError] = useState(false);
   const isOverdue = reservation.status === "VENCIDO"; // Si el estado es VENCIDO, la reserva está pasada de fecha y sin devolución.
   const canMarkReturned = reservation.status !== "FINALIZADO"; // Solo se puede marcar como devuelto si no está ya FINALIZADO.
   const wasReturnedLate = !!reservation.returnedAt && reservation.returnedLate; // Si ya se devolvió pero fue después de la fecha límite, mostramos un aviso de devolución tardía.
@@ -118,7 +123,7 @@ export default function RentalCard({
           >
             <ActivityIndicator size="small" color={colors.primary} />
           </View>
-        ) : imageUrl ? (
+        ) : imageUrl && !isImageError ? (
           <View style={{ position: "relative" }}>
             {/* Spinner superpuesto mientras carga la imagen real */}
             {isImageLoading && (
@@ -136,8 +141,16 @@ export default function RentalCard({
               source={{ uri: imageUrl }}
               style={styles.cardImage}
               resizeMode="cover"
-              // onLoadStart se elimina para evitar bucles. Con key={imageUrl} el estado nace en true.
+              onLoadStart={() => {
+                setIsImageLoading(true);
+                setIsImageError(false);
+              }}
               onLoadEnd={() => setIsImageLoading(false)}
+              onError={() => {
+                setIsImageLoading(false);
+                setIsImageError(true);
+              }}
+              accessibilityLabel={`Portada del disco ${discogsTitle ?? reservation.discogsId}`}
             />
           </View>
         ) : (

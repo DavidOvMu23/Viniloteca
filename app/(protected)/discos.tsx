@@ -18,7 +18,7 @@ import BottomNav, {
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
 import CustomButton from "src/components/Buttons/button";
-import { searchDiscogs } from "src/services/discogsService";
+import { searchReleases } from "src/services/discogsService";
 
 //definimos el tipo de dato que representa un disco que nos devuelve la API de Discogs. Esto nos ayuda a tener autocompletado y a entender qué campos podemos usar.
 type DiscogsItem = {
@@ -103,7 +103,7 @@ export default function Discos() {
 
     try {
       // 6) Llamamos a Discogs
-      const results = await searchDiscogs(trimmed);
+      const results = await searchReleases(trimmed);
       // 7) Guardamos la lista de resultados para pintarla abajo
       setItems(results);
     } catch (err) {
@@ -115,7 +115,8 @@ export default function Discos() {
     }
   };
 
-  //aquí definimos una función auxiliar para extraer los campos que nos interesan de cada disco. Esto es porque la API de Discogs devuelve un título que a veces tiene el formato "Artista - Álbum", y queremos separar esos dos datos para mostrarlos por separado. También manejamos el caso de que no haya imagen o año disponible.
+  // Función para obtener los campos que necesitamos de los discos
+  // que devuelve `searchReleases`.
   const getFields = (item: DiscogsItem) => {
     // 1) Título que devuelve Discogs normalmente tiene formato "Artista - Álbum"
     const titleParts = item.title ? item.title.split(" - ") : [""];
@@ -141,9 +142,11 @@ export default function Discos() {
     return { artist, album, imageUrl, year };
   };
 
-  //aquí definimos la función que dibuja cada disco en la lista de resultados. Esta función recibe un disco (item) y devuelve el diseño visual de cómo se muestra ese disco en la pantalla: con su portada, título, artista, año y un botón para alquilarlo. También maneja el caso de que no haya imagen disponible mostrando un recuadro gris.
+  // renderItem: mostramos los resultados en una lista
+
+  //usamos la informacion proporcionada por getFields para obtener
+  //los datos de cada disco
   const renderItem = ({ item }: { item: DiscogsItem }) => {
-    // Extraemos campos de forma explícita (mira getFields arriba)
     const { artist, album, imageUrl, year } = getFields(item);
 
     return (

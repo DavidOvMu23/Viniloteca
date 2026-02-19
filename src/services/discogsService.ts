@@ -1,165 +1,124 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DiscogsReleaseSummary, DiscogsReleaseDetail } from "../types/discogs";
 
-// Declaramos la base de la API de Discogs
+// Declaramos la base de la API
+// Desde aqui haremos las peticiones a los endpoints que queramos, en nuestro caso solo
+// nos interesarian el de busqueda y el de detalle de los discos
+// Aqui un ejemplo de como funcionaria con esos dos endpoints:
+// - https://api.discogs.com/database/search?q=nirvana&type=release&page=1&per_page=25
+// - https://api.discogs.com/releases/249504
 const API_BASE = "https://api.discogs.com";
 
-// Declaramos el token para la API de Discogs
+// Declaramos el token de autenticación
 let token: string | undefined = process.env.EXPO_PUBLIC_DISCOGS_TOKEN;
 
-// Establecemos la duración de la cache para las busquedas y los detalles.
-const SEARCH_CACHE_TTL = 1000 * 60 * 5; // 5 minutos para las busquedas
-const DETAIL_CACHE_TTL = 1000 * 60 * 60; // 1 hora para los detalles de los datos de los
+// Declaramos la duración de vida de la cache
+const SEARCH_TTL = 1000 * 60 * 5; // para las busquedas
+const DETAIL_TTL = 1000 * 60 * 60; // para los detalles de los discos
 
-// Cachés en memoria para resultados de búsqueda y detalles
-// Es util para así no tener que hacer peticiones repetidas al API
-// Si el usuario vuelve a buscar lo mismo o a ver un detalle ya consultado.
+// Const timeout
+const TIMEOUT_MS = 15000; // 15 segundos
+
+// Declaramos las caches para evitar hacer peticiones repetidas a la API
 const searchCache = new Map<
-  string,
-  { ts: number; data: DiscogsReleaseSummary[] }
+  string, //busqueda
+  { ts: number; data: DiscogsReleaseSummary[] } //guardamos la fecha de la busqueda y los resultados
 >();
 const detailCache = new Map<
-  number,
-  { ts: number; data: DiscogsReleaseDetail }
+  number, //id del disco
+  { ts: number; data: DiscogsReleaseDetail } //guardamos la fecha de la consulta y el detalle del disco
 >();
 
-// Establecemos la duración de la cache para las busquedas.
-export function setDiscogsToken(t: string) {
-  token = t;
-}
-
-// Vamos a crear una función para hacer peticiones a la API,
+/** Cabeceras de autenticación. */
+// Esta funcion se encarga de generar las cabeceras para autenticar las peticiones usando el token
 async function getAuthHeaders() {
-  // Seguridad: validar token
   if (!token) throw new Error("Discogs token no configurado.");
-
-  // Autenticación: usar token en headers según la documentación de Discogs
   return {
     Authorization: `Discogs token=${token}`,
-    Accept: "application/json",
+    Accept: "application/json", // indicamos a la api que queremos la respuesta json
   };
 }
 
-// Funcion para hacer persistente la cache de las búsquedas,
-// Así si el usuario cierra la app y vuelve a abrirla,
-// no tendrá que hacer las mismas peticiones al API de Discogs
+/** fetch con timeout y soporte de señal externa. */
+// esta funcion sirve para evitar hacer peticiones que se queden colgadas por problemas de conexión o lo que sea
+// así tambien evitamos que la app se quede bloqueada esperando una respuesta que no va a llegar
+async function fetchWithTimeout(
+  input: RequestInfo,
+  init: RequestInit = {},
+  timeoutMs: number = TIMEOUT_MS, // establecemos el tiempo de conexión maximo a 15 segundos
+) {
+  const controller = new AbortController(); // creamos un controller para poder controlar la señal
 
-// esta funcion recibirá una clave (que será la consulta de búsqueda)
-// y los datos a guardar (un array con todos resultados de la búsqueda)
-async function persistSearchCache(key: string, data: DiscogsReleaseSummary[]) {
+  // Si se alcanza el tiempo de conexión, se aborta la petición
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    // Para hacer persistente la información usaremosAsyncStorage
-    // con un objeto que incluye la marca de tiempo y los datos.
-    await AsyncStorage.setItem(
-      `@discogs:search:${key}`,
-      JSON.stringify({ ts: Date.now(), data }),
-    );
-  } catch {}
-}
-
-// Función para cargar la cache persistida, si existe y no ha expirado
-
-//recibirá la clave de la búsqueda y devolverá los datos si son válidos o null si no hay datos o han expirado
-async function loadPersistedSearch(
-  key: string,
-
-  // Usaremos promise para manejar la asincronía de los datos persistidos y así
-  // devolver los datos parseados si son válidos, o null si no hay datos o han expirado.
-): Promise<DiscogsReleaseSummary[] | null> {
-  // Intentamos cargar la información de AsyncStorage, parsearla y validar su antigüedad.
-  try {
-    // Si no hay datos o han expirado, devolvemos null para indicar que no hay caché válida.
-    // entonces la función de búsqueda hará la petición al API y actualizará la caché.
-    const raw = await AsyncStorage.getItem(`@discogs:search:${key}`);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Date.now() - parsed.ts > SEARCH_CACHE_TTL) return null;
-    return parsed.data;
-  } catch {
-    return null;
+    return await fetch(input, { ...init, signal: controller.signal }); // hacemos la petición con la señal de abortar
+  } finally {
+    clearTimeout(timer); // limpiamos el timer para evitar que se ejecute después de la petición
   }
 }
+
+// Nota: se eliminó la caché persistente (AsyncStorage). Solo queda caché en memoria.
 
 /**
- * Busca resultados en Discogs.
- * - Usa caché en memoria y en AsyncStorage para evitar peticiones repetidas.
- * - Soporta pasar `signal` para cancelar la petición desde la UI.
- * @param query cadena de búsqueda
- * @param options.signal AbortSignal opcional
+ * Buscar releases en la API de Discogs.
+ *
+ * Realiza una búsqueda por texto y devuelve un array de resúmenes de releases.
+ * La función usa caché en memoria con TTL para evitar peticiones repetidas durante la sesión.
+ *
+ * @param query Texto de búsqueda (artista, álbum, etc.). Se ignoran búsquedas vacías.
+ * @returns Promise que resuelve con un array de `DiscogsReleaseSummary`.
+ * @throws {Error} Lanza errores legibles en caso de timeout, problemas de red o respuestas HTTP (404/429/otros).
  */
 export async function searchReleases(
-  //la funcion recibe la consulta de la busqueda y un objeto de opciones para
-  // controlar la peticion
   query: string,
-  options?: {
-    signal?: AbortSignal;
-    page?: number;
-    perPage?: number;
-    forceRefresh?: boolean;
-  },
-
-  // Usaremos promise para manejar la asincronía de los datos persistidos y así
-  // devolver los datos parseados si son válidos, o null si no hay datos o han expirado.
 ): Promise<DiscogsReleaseSummary[]> {
-  // Validacion de que la consulta no esté vacía o solo con espacios, para evitar peticiones innecesarias al API.
-  const q = query.trim();
-  if (!q) return [];
-  const page = options?.page ?? 1;
-  const perPage = options?.perPage ?? 25;
-  const cacheKey = `${q}|p${page}|n${perPage}`;
+  const q = query.trim(); // quitamos los espacios en blanco
+  if (!q) return []; // si la busqueda esta vacia devolvemos un array vacio
 
-  // Devuelve caché si válida
-  const cached = searchCache.get(cacheKey);
-  if (
-    !options?.forceRefresh &&
-    cached &&
-    Date.now() - cached.ts < SEARCH_CACHE_TTL
-  ) {
-    return cached.data;
-    ("");
-  }
+  // La page y perPage son para controlar mejor lo que nos devuelve la API, al final la consulta a la api es como si
+  // hicieramos una busqueda en una web normal, por eso debemos de controlar la busuqeda para obtener y filtrar que es lo que queremos
+  // pensando en que una busqueda web tiene paginas de resultados, con un numero limitado de resultados por pagina, pues estamos controlando basicamente eso
+  // en mi caso yo solo voy a querer los resultados de la primera pagina y como maximo 25 resultados, por que son suficientes para lo que voy a hacer en la app
+  // y así evito que la app se quede bloqueada esperando una respuesta con demasiados resultados que no voy a usar
+  const page = 1;
+  const perPage = 25;
+  const key = `${q}|p${page}|n${perPage}`; // generamos la parte de la url que hace la busqueda
 
-  // Intentamos cargar caché persistida
-  if (!options?.forceRefresh) {
-    const persisted = await loadPersistedSearch(cacheKey);
-    if (persisted) {
-      searchCache.set(cacheKey, { ts: Date.now(), data: persisted });
-      return persisted;
-    }
-  }
+  // miramos en la cache si ya tenemos los resultados de esa busqueda y si no han expirado los mostramos
+  const cached = searchCache.get(key);
+  if (cached && Date.now() - cached.ts < SEARCH_TTL) return cached.data;
 
-  // Construimos la URL de búsqueda.
-  // La url al final es como si estuviéramos escribiendo en el navegador:
-  // https://api.discogs.com/database/search?q=beatles&type=release&token=MI_TOKEN
-  // pero con el texto que el usuario escribió en lugar de "beatles" y nuestro token real para poder usar la API.
+  //si no hacemos peticion a la API
+  const headers = await getAuthHeaders();
   const params = new URLSearchParams({
+    //construimos la url de busqueda
     q,
     type: "release",
     page: String(page),
     per_page: String(perPage),
   });
-  const url = `${API_BASE}/database/search?${params.toString()}`;
+  const url = `${API_BASE}/database/search?${params.toString()}`; // url de busqueda completa
 
-  // Autenticación: obtenemos los headers con el token para la API.
-  const headers = await getAuthHeaders();
+  //hacemos la peticion a la api
+  let res: Response;
+  try {
+    // intentamos hjacer la peticion
+    res = await fetchWithTimeout(url, { headers }, TIMEOUT_MS);
+  } catch (e: any) {
+    if (e?.name === "AbortError") throw new Error("Petición timeout");
+    throw new Error("Error de red");
+  }
 
-  // Hacemos la petición a la API de Discogs con fetch, pasando los headers y el signal para poder cancelar si es necesario.
-  // lo hacemos con await para esperar la respuesta y manejarla de forma síncrona en el código.
-  const res = await fetch(url, { headers, signal: options?.signal });
-
-  // Manejamos los errores que puede llegar a darnos a la hora de hacer la peticion a la api
-  // Si la respuesta no es ok, lanzamos un error con el código de estado para que la UI pueda mostrar un mensaje adecuado.
   if (!res.ok) {
+    // si la respuesta no es ok, miramos el status para saber que ha pasado
     if (res.status === 429) throw new Error("Discogs: rate limit (429)");
     throw new Error(`Discogs: HTTP ${res.status}`);
   }
 
-  // Parseamos la respuesta JSON y mapeamos los resultados a nuestro tipo `DiscogsReleaseSummary`.
-  const json = await res.json();
+  const json = await res.json(); // parseamos la respuesta a json
 
-  // Mapeamos los resultados de la consulta a la api a el tipo que hemos definido en src/types/discogs.ts,
-  // para así trabajar de una forma mas fácil con los datos y evitar errores.
-  const results = Array.isArray(json.results)
+  // mapeamos los resultados a nuestro tipo de dato para que sea mas facil usar en la app
+  const results: DiscogsReleaseSummary[] = Array.isArray(json.results)
     ? json.results.map((r: any) => ({
         id: Number(r.id),
         title: r.title,
@@ -177,62 +136,51 @@ export async function searchReleases(
       }))
     : [];
 
-  // Guardamos en caché de la busqueda en memoria y persistente
-  try {
-    searchCache.set(cacheKey, { ts: Date.now(), data: results });
-    persistSearchCache(cacheKey, results);
-  } catch {}
-
-  // Devolvemos los resultados mapeados a la UI para que los muestre al usuario.
+  // guardamos los resultados en la cache para futuras busquedas
+  searchCache.set(key, { ts: Date.now(), data: results });
   return results;
 }
 
+/** Obtener detalle por id. */
+// Esta funcion se encarga de obtener el detalle de un disco a partir de su id, que es lo que nos devuelve la busqueda
 /**
- * Devuelve detalle de un release por id.
- * Usa caché en memoria.
+ * Obtener detalle de un release por su id.
+ *
+ * Consulta la API de Discogs para recuperar la información completa de un release
+ * y la cachea en memoria para futuras consultas durante la sesión.
+ *
+ * @param id Identificador numérico del release.
+ * @returns Promise que resuelve con un `DiscogsReleaseDetail`.
+ * @throws {Error} Lanza errores legibles para timeout, falta del release (404), rate limit (429) o errores HTTP.
  */
-export async function getReleaseDetail(
-  //la función recibe el id del release que queremos obtener el detalle y
-  // un objeto de opciones para controlar la peticion
-  id: number,
-  options?: { signal?: AbortSignal; forceRefresh?: boolean },
+export async function getReleaseDetail(id: number) {
+  const cached = detailCache.get(id); // miramos en la cache si ya tenemos el detalle de ese disco y si no ha expirado lo mostramos
+  if (cached && Date.now() - cached.ts < DETAIL_TTL) return cached.data; // comprobamos si no ha expirado
 
-  // Usaremos promise para manejar la asincronía de los datos persistidos y así
-  // devolver los datos parseados si son válidos, o null si no hay datos o han expirado.
-): Promise<DiscogsReleaseDetail> {
-  const cached = detailCache.get(id);
-
-  // Devuelve caché si válida
-  if (
-    !options?.forceRefresh &&
-    cached &&
-    Date.now() - cached.ts < DETAIL_CACHE_TTL
-  ) {
-    return cached.data;
-  }
-
-  // Construimos la URL para obtener el detalle del release por su id.
-  // La url al final es como si estuviéramos escribiendo en el navegador:
-  // https://api.discogs.com/releases/12345?token=MI_TOKEN
-  // pero con el id del release que queremos obtener el detalle y nuestro token real para poder usar la API.
+  // hacemos la peticion a la API para obtener el detalle del disco
   const headers = await getAuthHeaders();
   const url = `${API_BASE}/releases/${id}`;
 
-  // Hacemos la petición a la API de Discogs con fetch, pasando los headers y el signal para poder cancelar si es necesario.
-  // lo hacemos con await para esperar la respuesta y manejarla de forma síncrona en el código.
-  const res = await fetch(url, { headers, signal: options?.signal });
+  // intentamos hacer la peticion
+  let res: Response;
+  try {
+    // intentamos hacer la peticion
+    res = await fetchWithTimeout(url, { headers }, TIMEOUT_MS);
+  } catch (e: any) {
+    if (e?.name === "AbortError") throw new Error("Petición timeout");
+    throw new Error("Error de red");
+  }
+
+  // si la respuesta no es ok, miramos el status para saber que ha pasado
   if (!res.ok) {
     if (res.status === 404) throw new Error("Release no encontrado");
     if (res.status === 429) throw new Error("Discogs: rate limit (429)");
     throw new Error(`Discogs: HTTP ${res.status}`);
   }
 
-  // Parseamos la respuesta JSON y mapeamos el resultado a nuestro tipo `DiscogsReleaseDetail`.
-  const json = await res.json();
-
-  // Mapeamos los resultados de la consulta a la api a el tipo que hemos definido en src/types/discogs.ts,
-  // para así trabajar de una forma mas fácil con los datos y evitar errores.
+  const json = await res.json(); // parseamos la respuesta a json
   const detail: DiscogsReleaseDetail = {
+    // mapeamos el resultado a nuestro tipo de dato para que sea mas facil usar en la app
     id: Number(json.id),
     title: json.title,
     artists: json.artists,
@@ -245,33 +193,19 @@ export async function getReleaseDetail(
     resource_url: json.resource_url,
   };
 
-  // Guardamos en caché el detalle en memoria
+  // guardamos el detalle en la cache para futuras consultas
   detailCache.set(id, { ts: Date.now(), data: detail });
   return detail;
 }
 
+/** Limpiar cachés */
 /**
- * Limpia cachés en memoria y persistente
+ * Limpiar la caché en memoria usada por el servicio.
+ *
+ * Borra las cachés `searchCache` y `detailCache` en memoria. No hay persistencia en disco.
+ * @returns Promise<void>
  */
 export async function clearDiscogsCache() {
   searchCache.clear();
   detailCache.clear();
-  try {
-    const keys = await AsyncStorage.getAllKeys();
-    const discogsKeys = keys.filter((k) => k.startsWith("@discogs:search:"));
-    if (discogsKeys.length) await AsyncStorage.multiRemove(discogsKeys);
-  } catch {}
-}
-
-/** Funcion para buscar discos en Discogs **/
-export async function searchDiscogs(
-  query: string,
-  options?: {
-    signal?: AbortSignal;
-    page?: number;
-    perPage?: number;
-    forceRefresh?: boolean;
-  },
-) {
-  return searchReleases(query, options);
 }
