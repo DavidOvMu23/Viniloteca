@@ -1,58 +1,25 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { TextInput } from "react-native-paper";
+// este archivo define un componente específico para el campo de contraseña en la pantalla de login.
 
-// Creamos un campo de texto para la contraseña
+import TextField from "src/components/Inputs/TextField";
+
+// Props que recibe el componente TextfieldPassword.
 interface TextfieldPasswordProps {
   value: string;
   onChangeText: (text: string) => void;
 }
 
-// Definimos el componente que pinta el input de contraseña
-export const TextfieldPassword = ({
+// Componente específico para el campo de contraseña en la pantalla de login.
+export default function TextfieldPassword({
   value,
   onChangeText,
-}: TextfieldPasswordProps) => {
+}: TextfieldPasswordProps) {
   return (
-    // Dejamos el contenedor del input
-    <View style={styles.container}>
-      {/* Usamos value y onChangeText que llegan desde la pantalla */}
-      <TextInput
-        mode="outlined"
-        placeholder="Contraseña"
-        secureTextEntry
-        autoCapitalize="none"
-        activeOutlineColor="#4f46e5"
-        outlineColor="#D0D0D0"
-        left={<TextInput.Icon icon="lock-outline" color="#888888" />}
-        style={styles.input}
-        outlineStyle={styles.outline}
-        value={value}
-        onChangeText={onChangeText}
-        theme={{
-          colors: {
-            text: "#000",
-            placeholder: "#999",
-            onSurfaceVariant: "#999",
-          },
-        }}
-      />
-    </View>
+    <TextField
+      value={value} // El valor actual del campo, controlado por el estado del padre.
+      onChangeText={onChangeText} // Función que se llama cuando el texto cambia, para actualizar el estado del padre.
+      placeholder="Contraseña" // Texto que se muestra cuando el campo está vacío, para guiar al usuario.
+      secure // Hace que el texto se oculte (aparecen puntos en lugar de caracteres) para proteger la privacidad de la contraseña.
+      leftIcon="lock-outline" // Icono de candado a la izquierda del campo, para indicar que es un campo de contraseña.
+    />
   );
-};
-
-// Definimos los estilos del input
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: "#FAFAFA",
-    fontSize: 15,
-  },
-  outline: {
-    borderRadius: 12,
-  },
-});
-
-export default TextfieldPassword;
+}

@@ -1,57 +1,34 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { TextInput } from "react-native-paper";
+// Este archivo define un componente específico para el campo de email en la pantalla de login.
 
-// Creamos un campo de texto para el email
+import React from "react";
+
+// Props que recibe el componente TextfieldEmail.
 interface TextfieldEmailProps {
-  value: string;
-  onChangeText: (text: string) => void;
+  value: string; // El valor actual del campo, controlado por el estado del padre.
+
+  onChangeText: (text: string) => void; // Función que se llama cuando el texto cambia, para actualizar el estado del padre.
 }
 
-// Definimos el componente que pinta el input de email
-export const TextfieldEmail = ({
-  value,
-  onChangeText,
-}: TextfieldEmailProps) => {
+import TextField from "src/components/Inputs/TextField";
+
+// Componente específico para el campo de email en la pantalla de login.
+export function TextfieldEmail({ value, onChangeText }: TextfieldEmailProps) {
   return (
-    <View style={styles.container}>
-      {/* Usamos value y onChangeText que llegan desde la pantalla */}
-      <TextInput
-        mode="outlined"
-        placeholder="Email"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        activeOutlineColor="#4f46e5"
-        outlineColor="#D0D0D0"
-        left={<TextInput.Icon icon="email-outline" color="#888888" />}
-        style={styles.input}
-        outlineStyle={styles.outline}
-        value={value}
-        onChangeText={onChangeText}
-        theme={{
-          colors: {
-            text: "#000",
-            placeholder: "#999",
-            onSurfaceVariant: "#999",
-          },
-        }}
-      />
-    </View>
+    // Renderizamos el TextField genérico con la configuración de email
+    <TextField
+      // El texto actual que muestra el campo (lo que el usuario ha escrito)
+      value={value}
+      // La función que se llama cuando el usuario teclea algo nuevo
+      onChangeText={onChangeText}
+      // Texto gris que aparece cuando el campo está vacío, como una pista
+      placeholder="Email"
+      // Le decimos al teléfono que muestre el teclado de email (con @ y .com)
+      keyboardType="email-address"
+      // Icono de sobre que aparece a la izquierda del campo para que
+      // el usuario sepa de un vistazo que aquí va el correo
+      leftIcon="email-outline"
+    />
   );
-};
-
-// Definimos los estilos del input
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  input: {
-    backgroundColor: "#FAFAFA",
-    fontSize: 15,
-  },
-  outline: {
-    borderRadius: 12,
-  },
-});
-
+}
+// Exportamos el componente para que pueda ser usado en otras partes de la app.
 export default TextfieldEmail;

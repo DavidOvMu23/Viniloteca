@@ -1,56 +1,92 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
-import { TextInput, type TextInputProps } from "react-native-paper";
-import { createCliente } from "src/types";
+import { Alert } from "react-native";
+import { type TextInputProps } from "react-native-paper";
 import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
+import { useThemePreference } from "src/providers/ThemeProvider";
+import { useUserStore } from "src/stores/userStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { createClient } from "src/services/clientService";
+import { clientsQueryKey } from "src/hooks/queries/queryKeys";
 
 export default function useNewClient() {
-  // Usamos el router para volver o ir al detalle
   const router = useRouter();
-  // Guardamos los estados del formulario que vienen de los inputs
+  const user = useUserStore((state) => state.user);
+  const isAdmin = user?.roleName === "SUPERVISOR";
+  const { colors, isDark } = useThemePreference();
+  const queryClient = useQueryClient();
+
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [telefono, setTelefono] = useState("");
   const [nif, setNif] = useState("");
 
-  // Bloqueamos el guardado si no hay nombre
   const isSaveDisabled = useMemo(() => !nombre.trim(), [nombre]);
 
-  // Creamos el cliente con lo que escribimos en el formulario
-  const handleSave = useCallback(async () => {
-    const nuevo = await createCliente({
-      nombre: nombre.trim(),
-      email: email.trim() || undefined,
-      telefono: telefono.trim() || undefined,
-      nifCif: nif.trim() || undefined,
-      activo: true,
-    });
-    router.replace(`/client/${nuevo.id}`);
-  }, [email, nif, nombre, router, telefono]);
+  const handleSave = useCallback(
+    async function handleSave() {
+      if (!isAdmin) return;
+      try {
+        const nuevo = await createClient({
+          full_name: nombre.trim(),
+          email: email.trim() || undefined,
+          avatar_url: undefined,
+        });
 
-  // Cancelamos y volvemos atrás
-  const handleCancel = useCallback(() => {
-    router.back();
-  }, [router]);
+        await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+        router.replace(`/client/${nuevo.id}`);
+      } catch (error) {
+        Alert.alert(
+          "No se pudo crear",
+          error instanceof Error
+            ? error.message
+            : "No se pudo crear el cliente.",
+        );
+      }
+    },
+    [isAdmin, nombre, email, queryClient, router],
+  );
 
-  // Definimos la barra inferior con Clientes activo
-  const goHome = useCallback(() => {
-    router.push("/home");
-  }, [router]);
+  const handleCancel = useCallback(
+    function handleCancel() {
+      router.back();
+    },
+    [router],
+  );
 
-  const goClients = useCallback(() => {
-    router.push("/client");
-  }, [router]);
+  const goHome = useCallback(
+    function goHome() {
+      router.push("/reservas");
+    },
+    [router],
+  );
+  const goClients = useCallback(
+    function goClients() {
+      router.push("/client");
+    },
+    [router],
+  );
+  const goDiscos = useCallback(
+    function goDiscos() {
+      router.push("/discos");
+    },
+    [router],
+  );
 
   const navItems = useMemo<BottomNavItem[]>(
     () => [
       {
-        icon: "home-outline",
-        label: "Home",
+        icon: "calendar-outline",
+        label: "Reservas",
         onPress: goHome,
-        href: "/home",
+        href: "/reservas",
       },
-      { icon: "document-text-outline", label: "Pedidos" },
+      {
+        icon: "disc-outline",
+        label: "Discos",
+        onPress: goDiscos,
+        href: "/discos",
+      },
       {
         icon: "people-outline",
         label: "Clientes",
@@ -58,15 +94,37 @@ export default function useNewClient() {
         href: "/client",
         active: true,
       },
-      { icon: "cube-outline", label: "Inventario" },
+      { icon: "person-circle-outline", label: "Perfil", href: "/profile" },
+      { icon: "settings-outline", label: "Preferencias", href: "/preferences" },
     ],
-    [goClients, goHome],
+    [goClients, goDiscos, goHome],
   );
 
-  // Compartimos estilos base para los TextInput
-  const textInputProps: Pick<TextInputProps, "outlineStyle" | "style"> = {
-    outlineStyle: { borderRadius: 12 },
-    style: { backgroundColor: "#fafafa" },
+  useEffect(() => {
+    if (isAdmin) return;
+    router.replace("/client");
+  }, [isAdmin, router]);
+
+  const fieldBackground = isDark ? "#111b2a" : "#f8fafc";
+  const placeholderColor = isDark ? "rgba(179,192,207,0.72)" : "#9ca3af";
+
+  const textInputProps: Pick<
+    TextInputProps,
+    | "outlineStyle"
+    | "style"
+    | "outlineColor"
+    | "activeOutlineColor"
+    | "textColor"
+    | "placeholderTextColor"
+    | "selectionColor"
+  > = {
+    outlineStyle: { borderRadius: 12, borderColor: colors.border },
+    style: { backgroundColor: fieldBackground },
+    outlineColor: colors.border,
+    activeOutlineColor: colors.primary,
+    textColor: colors.text,
+    placeholderTextColor: placeholderColor,
+    selectionColor: `${colors.primary}99`,
   };
 
   return {
@@ -83,5 +141,7 @@ export default function useNewClient() {
     handleSave,
     handleCancel,
     textInputProps,
+    iconColor: placeholderColor,
+    isAdmin,
   };
 }
