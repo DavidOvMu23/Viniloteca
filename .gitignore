@@ -35,6 +35,7 @@ yarn-error.*
 .env*.local
 .env
 viniloteca-*.json
+google-services.json
 
 # typescript
 *.tsbuildinfo
