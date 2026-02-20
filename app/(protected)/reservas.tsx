@@ -1,6 +1,6 @@
 // este archivo maneja toda la lógica de la pantalla de RESERVAS, donde el usuario puede ver sus alquileres activos, vencidos y finalizados. También puede marcar un alquiler como devuelto desde esta pantalla. Además, se enriquece visualmente cada reserva con la portada y el título del disco sacados de la API de Discogs usando el discogsId que tenemos en cada reserva.
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,12 +16,16 @@ import BottomNav, {
 } from "src/components/BottomNav/bottom_nav";
 import RentalCard from "src/components/RentalCard";
 import { useThemePreference } from "src/providers/ThemeProvider";
+import * as Notifications from "expo-notifications";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useUserStore } from "src/stores/userStore";
 import {
   getReservationsByUserId,
   markReservationAsReturned,
   type RentalReservation,
 } from "src/services/orderService";
+import Constants from "expo-constants";
+import * as Device from "expo-device";
 
 // Tipos y funciones de enriquecimiento visual con Discogs
 type ReservationFilter = "TODAS" | "ACTIVAS" | "VENCIDAS" | "FINALIZADAS";
@@ -38,7 +42,60 @@ function buildDiscogsUrl(discogsId: number, token: string): string {
     token,
   )}`;
 }
+// Con esto configuramos cómo se mostrarán las notificaciones cuando lleguen
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
+useEffect(() => {
+  async function obtenerToken() {
+    // Comprobamos si es un móvil de verdad (los simuladores no valen)
+    if (Device.isDevice) {
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      // Si no tenemos permiso, se lo preguntamos al usuario
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      // Si deniega el permiso, nos salimos
+      if (finalStatus !== "granted") {
+        alert("¡Necesitas dar permiso para recibir notificaciones!");
+        return;
+      }
+
+      // Obtenemos el projectId de la configuración y pedimos el token
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        Constants.easConfig?.projectId;
+
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId,
+        });
+        // ¡Lo imprimimos en la consola para que puedas copiarlo!
+        alert("¡ÉXITO! Tu token es: " + tokenData.data);
+        console.log("Aqui está el token: ", tokenData.data);
+      } catch (error) {
+        alert("ERROR AL PEDIR TOKEN: " + error);
+        console.log("Error al obtener el token: ", error);
+      }
+    } else {
+      console.log("Las notificaciones push solo funcionan en un móvil físico.");
+    }
+  }
+
+  obtenerToken();
+}, []); // El array vacío [] significa que esto solo se ejecutará 1 vez al abrir la app
 //funcion para obtener el resumen de un lanzamiento de Discogs dado su ID. Hace una petición a la API de Discogs, maneja posibles errores y devuelve un objeto con la URL de la imagen y el título del disco. Si algo falla, devuelve null en ambos campos para que el resto del código pueda manejarlo sin problemas.
 async function fetchDiscogsReleaseSummary(
   discogsId: number,
@@ -106,6 +163,10 @@ async function loadDiscogsSummariesByIds(
 export default function Reservas() {
   // Leemos del almacén global la información del usuario logueado.
   const user = useUserStore((state) => state.user);
+
+  // router y params para manejar navegación desde notificaciones
+  const router = useRouter();
+  const params = useLocalSearchParams<{ reservationId?: string }>();
 
   // Obtenemos la paleta de colores según el tema actual (claro/oscuro).
   const { colors } = useThemePreference();
@@ -214,6 +275,9 @@ export default function Reservas() {
   const [images, setImages] = useState<Record<number, string | null>>({});
   const [titles, setTitles] = useState<Record<number, string | null>>({});
 
+  // Ref al FlatList para poder desplazarnos a una reserva concreta
+  const listRef = useRef<FlatList<RentalReservation> | null>(null);
+
   useEffect(() => {
     const token = process.env.EXPO_PUBLIC_DISCOGS_TOKEN?.trim();
     if (!token || reservas.length === 0) return;
@@ -250,6 +314,72 @@ export default function Reservas() {
       active = false;
     };
   }, [reservas]); // Dependencia necesaria, pero controlada dentro con el chequeo
+
+  // Si la pantalla recibe un param `reservationId` en la URL, intentamos
+  // desplazar la lista hacia esa reserva (útil cuando el usuario toca la notificación).
+  useEffect(() => {
+    const reservationId = params?.reservationId;
+    if (!reservationId || reservas.length === 0) return;
+
+    const idx = reservas.findIndex((r) => r.id === reservationId);
+    if (idx === -1) return;
+
+    // Intentamos scrollToIndex; evitamos errores si el índice no está cargado aún.
+    try {
+      listRef.current?.scrollToIndex({ index: idx, animated: true });
+    } catch {
+      // si falla (índice no en pantalla), ignoramos silenciosamente
+    }
+  }, [params?.reservationId, reservas]);
+
+  // Listeners de notificaciones: recibir (foreground) y respuesta (tap)
+  useEffect(() => {
+    // Solo activa si hay usuario (necesitamos saber a qué recargar)
+    if (!user?.id) return;
+
+    const receivedListener = Notifications.addNotificationReceivedListener(
+      (notification) => {
+        const data = notification.request.content.data as any;
+        // Si la notificación indica que hay que refrescar la lista, lo hacemos.
+        if (data?.refresh === true) {
+          void (async () => {
+            try {
+              setLoading(true);
+              const data = await getReservationsByUserId(user.id);
+              setReservas(data);
+            } catch {
+              // no hacemos nada aquí, la UI ya maneja errores en la carga inicial
+            } finally {
+              setLoading(false);
+            }
+          })();
+        }
+      },
+    );
+
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data as any;
+        const reservationId = data?.reservationId || data?.reservation_id;
+
+        // Si viene un id de reserva, abrimos la pantalla de reservas con query
+        // para que ésta pueda desplazarse hacia la reserva concreta.
+        if (reservationId) {
+          void router.push(`/reservas?reservationId=${reservationId}`);
+        } else {
+          void router.push("/reservas");
+        }
+      });
+
+    return () => {
+      try {
+        receivedListener?.remove?.();
+      } catch {}
+      try {
+        responseListener?.remove?.();
+      } catch {}
+    };
+  }, [user?.id, router]);
 
   // Cuando el usuario pulsa "Devolución" en una tarjeta, llamamos al
   // servicio para marcar esa reserva como finalizada y actualizamos
@@ -369,6 +499,7 @@ export default function Reservas() {
             - Botón "Devolución" debajo de la imagen (si la reserva no
               está finalizada) */}
         <FlatList
+          ref={listRef}
           data={filteredReservas}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
