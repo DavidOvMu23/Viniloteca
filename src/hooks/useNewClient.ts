@@ -34,6 +34,7 @@ export default function useNewClient() {
         });
 
         await queryClient.invalidateQueries({ queryKey: clientsQueryKey });
+        Alert.alert("Cliente creado", `Se ha añadido ${nuevo.full_name}`);
         router.replace(`/client/${nuevo.id}`);
       } catch (error) {
         Alert.alert(

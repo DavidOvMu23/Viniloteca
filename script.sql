@@ -13,6 +13,9 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- Añadimos columna para guardar el token Expo push del dispositivo
+alter table if exists public.profiles add column if not exists expo_push_token text;
+
 create or replace function public.is_supervisor(user_id uuid)
 returns boolean
 language sql
@@ -157,3 +160,14 @@ drop trigger if exists trg_auth_user_created on auth.users;
 create trigger trg_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_auth_user();
+
+create or replace function public.get_expo_push_tokens()
+returns table(expo_push_token text)
+language sql
+security definer
+as $$
+  select expo_push_token
+  from public.profiles
+  where expo_push_token is not null
+    and auth.uid() is not null;
+$$;

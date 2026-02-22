@@ -34,8 +34,6 @@ yarn-error.*
 # local env files
 .env*.local
 .env
-viniloteca-*.json
-google-services.json
 
 # typescript
 *.tsbuildinfo
@@ -43,3 +41,5 @@ google-services.json
 # generated native folders
 /ios
 /android
+viniloteca-dbd63*
+google-services.json

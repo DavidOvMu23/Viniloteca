@@ -1,6 +1,7 @@
 // Aquí tenemos todas las funciones relacionadas con la autenticación
 
 import { supabase } from "../../supabase/supabaseClient";
+import { sendNewClientNotification } from "./notifications";
 import { type RoleName, type UserProfile } from "../stores/userStore";
 
 // Cuando iniciamos sesión, devolvemos esto:
@@ -126,6 +127,34 @@ export async function signUpWithEmail(
     full_name: cleanName,
     email: cleanEmail,
   });
+
+  // Enviar notificación a todos los usuarios informando del nuevo signup.
+  // No bloqueamos el flujo de registro si falla el envío.
+  try {
+    const publicEndpoint = process.env.EXPO_PUBLIC_SEND_NEW_CLIENT_URL;
+    if (publicEndpoint) {
+      try {
+        await fetch(publicEndpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fullName: cleanName }),
+        });
+      } catch (err) {
+        console.log(
+          "Error enviando notificación al endpoint público tras signup:",
+          err,
+        );
+      }
+    } else {
+      try {
+        await sendNewClientNotification(cleanName);
+      } catch (err) {
+        console.log("Error enviando notificación tras signup:", err);
+      }
+    }
+  } catch (err) {
+    console.log("Error en el flujo de notificaciones tras signup:", err);
+  }
 
   return {};
 }

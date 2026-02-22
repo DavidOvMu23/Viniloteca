@@ -52,50 +52,6 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
-
-useEffect(() => {
-  async function obtenerToken() {
-    // Comprobamos si es un móvil de verdad (los simuladores no valen)
-    if (Device.isDevice) {
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      // Si no tenemos permiso, se lo preguntamos al usuario
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      // Si deniega el permiso, nos salimos
-      if (finalStatus !== "granted") {
-        alert("¡Necesitas dar permiso para recibir notificaciones!");
-        return;
-      }
-
-      // Obtenemos el projectId de la configuración y pedimos el token
-      const projectId =
-        Constants.expoConfig?.extra?.eas?.projectId ??
-        Constants.easConfig?.projectId;
-
-      try {
-        const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId,
-        });
-        // ¡Lo imprimimos en la consola para que puedas copiarlo!
-        alert("¡ÉXITO! Tu token es: " + tokenData.data);
-        console.log("Aqui está el token: ", tokenData.data);
-      } catch (error) {
-        alert("ERROR AL PEDIR TOKEN: " + error);
-        console.log("Error al obtener el token: ", error);
-      }
-    } else {
-      console.log("Las notificaciones push solo funcionan en un móvil físico.");
-    }
-  }
-
-  obtenerToken();
-}, []); // El array vacío [] significa que esto solo se ejecutará 1 vez al abrir la app
 //funcion para obtener el resumen de un lanzamiento de Discogs dado su ID. Hace una petición a la API de Discogs, maneja posibles errores y devuelve un objeto con la URL de la imagen y el título del disco. Si algo falla, devuelve null en ambos campos para que el resto del código pueda manejarlo sin problemas.
 async function fetchDiscogsReleaseSummary(
   discogsId: number,
@@ -143,6 +99,10 @@ async function loadDiscogsSummariesByIds(
   titleMap: Record<number, string | null>;
 }> {
   // Eliminamos IDs repetidos para no hacer peticiones de más.
+  // Mostrar token en UI para depuración (puedes quitar esto en producción)
+  try {
+    Alert.alert("Expo Push Token", tokenData.data);
+  } catch {}
   const uniqueIds = Array.from(new Set(discogsIds));
 
   // Diccionarios vacíos que iremos rellenando.
@@ -220,6 +180,54 @@ export default function Reservas() {
 
     return items;
   }, [isAdmin]);
+
+  // Solicitar permiso y registrar token Expo Push (se ejecuta al montar y cuando cambia el usuario)
+  useEffect(() => {
+    async function obtenerToken() {
+      if (!Device.isDevice) {
+        console.log(
+          "Las notificaciones push solo funcionan en un móvil físico.",
+        );
+        return;
+      }
+
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      if (finalStatus !== "granted") {
+        console.log("Permiso de notificaciones denegado por el usuario.");
+        return;
+      }
+
+      const projectId =
+        Constants.expoConfig?.extra?.eas?.projectId ??
+        Constants.easConfig?.projectId;
+
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync({
+          projectId,
+        });
+        try {
+          const { registerExpoPushToken } =
+            await import("src/services/profile");
+          await registerExpoPushToken(tokenData.data);
+          console.log("Token registrado en perfil:", tokenData.data);
+        } catch (err) {
+          console.log("Error registrando token en backend:", err);
+        }
+      } catch (error) {
+        console.log("Error al obtener el token de notificaciones: ", error);
+      }
+    }
+
+    void obtenerToken();
+  }, [user?.id]);
 
   // Se ejecuta cuando la pantalla aparece o cuando cambia el user.id.
   //

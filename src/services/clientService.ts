@@ -6,6 +6,7 @@
 // Por que solo los supervisores pueden ver la lista de clientes y editar su información.
 
 import { supabase } from "../../supabase/supabaseClient";
+import { sendNewClientNotification } from "./notifications";
 import { type Cliente } from "../types";
 
 // Definimos cómo vienen los datos desde la base de datos
@@ -189,4 +190,59 @@ export async function deleteClient(id: string): Promise<boolean> {
   }
 
   return true;
+}
+
+// Crear un nuevo cliente en la tabla 'profiles'
+export async function createClient(payload: {
+  full_name: string;
+  email?: string;
+  avatar_url?: string | null;
+}): Promise<Cliente> {
+  const { full_name, email, avatar_url } = payload;
+
+  const insertRes = await supabase
+    .from("profiles")
+    .insert({ full_name, email: email ?? null, avatar_url: avatar_url ?? null })
+    .select()
+    .single();
+
+  if (insertRes.error || !insertRes.data) {
+    throw new Error("No se pudo crear el cliente.");
+  }
+
+  // Enviamos notificación a todos los dispositivos (si hay tokens)
+  try {
+    // Seguir la implementación del profesor: llamar a la función local `sendNewClientNotification`
+    // Nota: `sendNewClientNotification` ejecutada en un entorno server-side debe usar
+    // una SERVICE ROLE KEY para poder leer todos los tokens. Si la app corre en el cliente,
+    // asegúrate de desplegarla en un endpoint seguro.
+    try {
+      await sendNewClientNotification(full_name);
+    } catch (err) {
+      console.log(
+        "sendNewClientNotification falló, intentando endpoint público:",
+        err,
+      );
+      const publicEndpoint = process.env.EXPO_PUBLIC_SEND_NEW_CLIENT_URL;
+      if (publicEndpoint) {
+        try {
+          await fetch(publicEndpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fullName: full_name }),
+          });
+        } catch (fetchErr) {
+          console.log(
+            "Error enviando notificación al endpoint público:",
+            fetchErr,
+          );
+        }
+      }
+    }
+  } catch (e) {
+    // No bloqueamos la creación si falla el envío de notificaciones
+    console.log("Error enviando notificaciones tras crear cliente:", e);
+  }
+
+  return traducirCliente(insertRes.data as ClientRow);
 }

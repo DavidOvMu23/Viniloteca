@@ -116,3 +116,24 @@ export async function uploadUserAvatar({
     avatarUrl: urlFresta,
   };
 }
+
+// Registrar el token de Expo Push del dispositivo del usuario en su perfil
+export async function registerExpoPushToken(token: string): Promise<void> {
+  if (!token) return;
+
+  const user = await supabase.auth.getUser();
+  const userId = user.data.user?.id;
+  if (!userId) return;
+
+  const res = await supabase
+    .from("profiles")
+    .update({ expo_push_token: token })
+    .eq("id", userId);
+
+  if (res.error) {
+    console.log("Error guardando expo push token:", res.error);
+    throw new Error("No se pudo registrar el token de notificaciones.");
+  }
+
+  return;
+}
