@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useEffect } from "react";
 import { Alert, Platform } from "react-native";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
@@ -233,8 +234,34 @@ export default function useClientDetail() {
         {
           text: "Eliminar",
           style: "destructive",
-          onPress: function onPress() {
-            void confirmDelete();
+          onPress: async function onPress() {
+            // En móvil intentamos autenticación biométrica antes de borrar
+            try {
+              const hasHardware = await LocalAuthentication.hasHardwareAsync();
+              const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+
+              if (hasHardware && isEnrolled) {
+                const result = await LocalAuthentication.authenticateAsync({
+                  promptMessage: "Autentícate para eliminar cliente",
+                  cancelLabel: "Cancelar",
+                });
+
+                if (!result.success) {
+                  Alert.alert(
+                    "Autenticación fallida",
+                    "No se pudo verificar la identidad. Operación cancelada.",
+                  );
+                  return;
+                }
+              }
+
+              // Si no hay hardware o no hay credenciales registradas, continuamos con el borrado.
+              void confirmDelete();
+            } catch (err) {
+              console.error("Error en autenticación biométrica:", err);
+              // En caso de error en el proceso de biometría, no bloqueamos al usuario: intentamos borrar igualmente.
+              void confirmDelete();
+            }
           },
         },
       ]);

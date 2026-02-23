@@ -15,7 +15,10 @@
     },
     "ios": {
       "bundleIdentifier": "com.viniloteca.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.viniloteca.app",
@@ -30,7 +33,11 @@
       "favicon": "./assets/logo-claro.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-router", "expo-notifications", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-font"
+    ],
     "extra": {
       "router": {},
       "eas": {
