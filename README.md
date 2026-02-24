@@ -266,4 +266,4 @@ Abre un issue o un pull request con cambios propuestos. Buenas mejoras:
 
 ## Licencia
 
-Indica aquí la licencia del proyecto si procede. 
+Indica aquí la licencia del proyecto si procede.
