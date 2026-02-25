@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { type TextInputProps } from "react-native-paper";
-import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
 import { useQueryClient } from "@tanstack/react-query";

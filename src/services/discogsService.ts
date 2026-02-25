@@ -205,7 +205,4 @@ export async function getReleaseDetail(id: number) {
  * Borra las cachés `searchCache` y `detailCache` en memoria. No hay persistencia en disco.
  * @returns Promise<void>
  */
-export async function clearDiscogsCache() {
-  searchCache.clear();
-  detailCache.clear();
-}
+// clearDiscogsCache removed — not referenced in app code (see README only)

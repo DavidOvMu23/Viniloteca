@@ -3,25 +3,9 @@
 
 import { supabase } from "../../supabase/supabaseClient";
 import { getUserProfileById } from "./auth";
-import type { UserProfile } from "../stores/userStore";
+import { type UserProfile } from "src/types";
 import { uploadAvatar } from "../features/storage/uploadAvatar";
-
-// Tipos de datos para las funciones principales
-
-// Para hacer update en el nombre
-type UpdateUserNamePayload = {
-  userId: string;
-  fullName: string;
-  fallbackEmail?: string;
-};
-
-// Para subir una nueva foto de perfil
-type UploadAvatarPayload = {
-  userId: string;
-  fileUri: string; // Ruta de la imagen en tu móvil
-  fallbackEmail?: string;
-  fallbackName?: string;
-};
+import type { UpdateUserNamePayload, UploadAvatarPayload } from "src/types";
 
 // Función para actualizar el nombre del usuario
 export async function updateUserDisplayName({

@@ -5,9 +5,8 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { TextInput } from "react-native-paper";
 import Header from "src/components/Header/header";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import CustomButton from "src/components/Buttons/button";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";

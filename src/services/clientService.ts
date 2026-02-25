@@ -7,17 +7,7 @@
 
 import { supabase } from "../../supabase/supabaseClient";
 import { sendNewClientNotification } from "./notifications";
-import { type Cliente } from "../types";
-
-// Definimos cómo vienen los datos desde la base de datos
-type ClientRow = {
-  id: string;
-  full_name: string | null;
-  email?: string | null;
-  avatar_url?: string | null;
-  role?: string | null;
-  created_at?: string | null;
-};
+import { type Cliente, type ClientRow } from "src/types";
 
 // Funcion para crar un avatar por defecto usando la primera letra del nombre
 function buildDefaultAvatar(name: string) {

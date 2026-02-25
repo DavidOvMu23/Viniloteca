@@ -24,9 +24,8 @@ import { supabase } from "supabase/supabaseClient";
 // useUserStore es un almacén donde guardamos los datos
 // del usuario de forma global: nombre, email, avatar, etc.
 // UserProfile es tipo que describe la forma de esos datos.
-import { useUserStore, type UserProfile } from "src/stores/userStore";
-
-export type AuthStatus = "checking" | "authenticated" | "unauthenticated"; // define los posibles estados de autenticación
+import { useUserStore } from "src/stores/userStore";
+import { type UserProfile, type AuthStatus } from "src/types";
 
 //interfaz para el valor que se escribirá en el contexto de autenticación
 interface AuthContextValue {

@@ -5,7 +5,7 @@
 export { default as TextField } from "./TextField";
 
 // Campo de texto especial para escribir el correo electrónico
-export { TextfieldEmail } from "../../hooks/login/Textfield/textfield_email";
+// (Se eliminó la re-exportación named `TextfieldEmail` porque no se usa)
 
 // Campo de texto especial para escribir la contraseña (oculta los caracteres)
 export { default as TextfieldPassword } from "../../hooks/login/Textfield/textfield_password";

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useUserStore } from "src/stores/userStore";
 import { type Cliente } from "src/types";
 import { useClientsQuery } from "src/hooks/queries/useClientsQuery";

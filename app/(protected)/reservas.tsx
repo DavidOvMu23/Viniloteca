@@ -11,9 +11,8 @@ import {
   View,
 } from "react-native";
 import Header from "src/components/Header/header";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import RentalCard from "src/components/RentalCard";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import * as Notifications from "expo-notifications";
@@ -22,8 +21,8 @@ import { useUserStore } from "src/stores/userStore";
 import {
   getReservationsByUserId,
   markReservationAsReturned,
-  type RentalReservation,
 } from "src/services/orderService";
+import { type RentalReservation } from "src/types";
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 
@@ -90,6 +89,45 @@ async function fetchDiscogsReleaseSummary(
   }
 }
 
+// Registra el token de Expo Push (si procede) y lo guarda en el backend.
+async function registerExpoPushIfDevice(userId?: string) {
+  if (!Device.isDevice) {
+    console.log("Las notificaciones push solo funcionan en un móvil físico.");
+    return;
+  }
+
+  try {
+    const { status: existingStatus } =
+      await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+
+    if (existingStatus !== "granted") {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+
+    if (finalStatus !== "granted") {
+      console.log("Permiso de notificaciones denegado por el usuario.");
+      return;
+    }
+
+    const projectId =
+      Constants.expoConfig?.extra?.eas?.projectId ??
+      Constants.easConfig?.projectId;
+
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+    try {
+      const { registerExpoPushToken } = await import("src/services/profile");
+      await registerExpoPushToken(tokenData.data);
+      console.log("Token registrado en perfil:", tokenData.data);
+    } catch (err) {
+      console.log("Error registrando token en backend:", err);
+    }
+  } catch (error) {
+    console.log("Error al obtener el token de notificaciones: ", error);
+  }
+}
+
 // Función para cargar resúmenes de Discogs para una lista de IDs. Devuelve dos mapas: uno de ID a imagen y otro de ID a título. Esto nos permite enriquecer la información de las reservas con datos visuales y descriptivos de los discos.
 async function loadDiscogsSummariesByIds(
   discogsIds: number[],
@@ -112,13 +150,13 @@ async function loadDiscogsSummariesByIds(
 
   // Hacemos peticiones en paralelo con concurrencia limitada para no saturar la red
   const CONCURRENCY = 6;
-  const chunks: number[][] = [];
-  for (let i = 0; i < ids.length; i += CONCURRENCY) {
-    chunks.push(ids.slice(i, i + CONCURRENCY));
-  }
+  const chunkArray = <T,>(arr: T[], size: number) => {
+    const res: T[][] = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  };
 
-  for (const chunk of chunks) {
-    // Ejecutamos el lote en paralelo
+  for (const chunk of chunkArray(ids, CONCURRENCY)) {
     await Promise.all(
       chunk.map(async (discogsId) => {
         try {
@@ -200,50 +238,7 @@ export default function Reservas() {
 
   // Solicitar permiso y registrar token Expo Push (se ejecuta al montar y cuando cambia el usuario)
   useEffect(() => {
-    async function obtenerToken() {
-      if (!Device.isDevice) {
-        console.log(
-          "Las notificaciones push solo funcionan en un móvil físico.",
-        );
-        return;
-      }
-
-      const { status: existingStatus } =
-        await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-
-      if (existingStatus !== "granted") {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== "granted") {
-        console.log("Permiso de notificaciones denegado por el usuario.");
-        return;
-      }
-
-      const projectId =
-        Constants.expoConfig?.extra?.eas?.projectId ??
-        Constants.easConfig?.projectId;
-
-      try {
-        const tokenData = await Notifications.getExpoPushTokenAsync({
-          projectId,
-        });
-        try {
-          const { registerExpoPushToken } =
-            await import("src/services/profile");
-          await registerExpoPushToken(tokenData.data);
-          console.log("Token registrado en perfil:", tokenData.data);
-        } catch (err) {
-          console.log("Error registrando token en backend:", err);
-        }
-      } catch (error) {
-        console.log("Error al obtener el token de notificaciones: ", error);
-      }
-    }
-
-    void obtenerToken();
+    void registerExpoPushIfDevice(user?.id);
   }, [user?.id]);
 
   // Se ejecuta cuando la pantalla aparece o cuando cambia el user.id.

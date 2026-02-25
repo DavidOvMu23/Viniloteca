@@ -5,7 +5,7 @@ import { Alert, Platform } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useUserStore } from "src/stores/userStore";
 import { deleteClient } from "src/services/clientService";
 import { useClientQuery } from "src/hooks/queries/useClientQuery";

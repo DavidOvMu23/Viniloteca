@@ -3,7 +3,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useRouter } from "expo-router";
-import { type BottomNavItem } from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useUserStore } from "src/stores/userStore";
 
 // Esta es la función principal que exportamos. Es un hook personalizado que prepara todo lo necesario para la pantalla de Inicio.

@@ -3,14 +3,11 @@
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Header from "src/components/Header/header";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useUserStore } from "src/stores/userStore";
-import {
-  useThemePreference,
-  type ThemeMode,
-} from "src/providers/ThemeProvider";
+import { useThemePreference } from "src/providers/ThemeProvider";
+import { type ThemeMode } from "src/types";
 
 export default function Preferences() {
   // Obtenemos las funciones y valores relacionados con el tema visual de la app desde el ThemeProvider. Esto nos permite leer el tema actual (mode) y cambiarlo (setMode) cuando el usuario selecciona una opción.

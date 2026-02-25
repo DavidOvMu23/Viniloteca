@@ -12,12 +12,12 @@ import {
 import { TextInput } from "react-native-paper";
 import { useRouter } from "expo-router";
 import Header from "src/components/Header/header";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
 import CustomButton from "src/components/Buttons/button";
+import DiscCard from "src/components/DiscCard/DiscCard";
 import { searchReleases } from "src/services/discogsService";
 
 //definimos el tipo de dato que representa un disco que nos devuelve la API de Discogs. Esto nos ayuda a tener autocompletado y a entender qué campos podemos usar.
@@ -180,105 +180,55 @@ export default function Discos() {
       "Amon Amarth",
     ];
 
+    // Utilitarios pequeños para mantener la función principal limpia
+    const shuffle = <T,>(arr: T[]) => {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = arr[i];
+        // swap
+        arr[i] = arr[j];
+        arr[j] = tmp;
+      }
+      return arr;
+    };
+
+    const dedupeById = (list: any[]) => {
+      const map = new Map<number, any>();
+      list.forEach((it) => {
+        const id = Number(it?.id);
+        if (!Number.isNaN(id) && !map.has(id)) map.set(id, it);
+      });
+      return Array.from(map.values());
+    };
+
     const fetchRandomMix = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Determinar límite seguro según si estamos autenticados
         const hasToken = Boolean(process.env.EXPO_PUBLIC_DISCOGS_TOKEN);
-        const serverLimit = hasToken ? 60 : 25; // información del servicio
-        // Usamos una fracción segura del límite para evitar acercarnos al cap
+        const serverLimit = hasToken ? 60 : 25;
         const safeRequests = Math.max(5, Math.floor(serverLimit * 0.35));
 
-        // Elegimos hasta `safeRequests` artistas al azar (máx 25)
-        const picks: string[] = [];
+        // build picks
         const pool = [...popular];
         const k = Math.min(25, safeRequests, pool.length);
+        const picks: string[] = [];
         for (let i = 0; i < k && pool.length; i++) {
           const idx = Math.floor(Math.random() * pool.length);
           picks.push(pool.splice(idx, 1)[0]);
         }
 
-        // Lanzamos todas las búsquedas en paralelo y procesamos resultados al llegar (sin esperar lotes)
-        const seen = new Map<number, DiscogsItem>();
-        const perArtist = Math.ceil(18 / Math.max(1, picks.length));
-
-        const promises = picks.map((t) =>
-          searchReleases(t)
-            .then((arr) => {
-              const list = Array.isArray(arr) ? arr.slice() : [];
-              // mezclamos localmente
-              for (let x = list.length - 1; x > 0; x--) {
-                const y = Math.floor(Math.random() * (x + 1));
-                const tmp = list[x];
-                // eslint-disable-next-line no-param-reassign
-                list[x] = list[y];
-                // eslint-disable-next-line no-param-reassign
-                list[y] = tmp;
-              }
-              // añadimos hasta `perArtist` ítems de esta lista al conjunto visto
-              list.slice(0, perArtist).forEach((it: any) => {
-                if (it && it.id && !seen.has(Number(it.id)))
-                  seen.set(Number(it.id), it);
-              });
-
-              // Reconstruimos la lista priorizando diversidad por artista
-              const unique = Array.from(seen.values());
-              const byArtist = new Map<string, DiscogsItem[]>();
-              unique.forEach((u) => {
-                const titleParts = u.title ? u.title.split(" - ") : [""];
-                const artistKey =
-                  titleParts.length > 1 ? titleParts[0].trim() : "";
-                const arr = byArtist.get(artistKey) || [];
-                arr.push(u);
-                byArtist.set(artistKey, arr);
-              });
-
-              const artistKeys = Array.from(byArtist.keys()).filter(
-                (k) => k !== "",
-              );
-              for (let a = artistKeys.length - 1; a > 0; a--) {
-                const j = Math.floor(Math.random() * (a + 1));
-                const tmp = artistKeys[a];
-                // eslint-disable-next-line no-param-reassign
-                artistKeys[a] = artistKeys[j];
-                // eslint-disable-next-line no-param-reassign
-                artistKeys[j] = tmp;
-              }
-
-              const final: DiscogsItem[] = [];
-              for (let a = 0; a < artistKeys.length && final.length < 18; a++) {
-                const listA = byArtist.get(artistKeys[a]) || [];
-                if (listA.length === 0) continue;
-                const pick = listA[Math.floor(Math.random() * listA.length)];
-                final.push(pick);
-              }
-
-              if (final.length < 18) {
-                const leftovers = unique.filter(
-                  (u) => !final.some((f) => f.id === u.id),
-                );
-                for (let l = leftovers.length - 1; l > 0; l--) {
-                  const j = Math.floor(Math.random() * (l + 1));
-                  const tmp = leftovers[l];
-                  // eslint-disable-next-line no-param-reassign
-                  leftovers[l] = leftovers[j];
-                  // eslint-disable-next-line no-param-reassign
-                  leftovers[j] = tmp;
-                }
-                final.push(...leftovers.slice(0, 18 - final.length));
-              }
-
-              // Actualizamos la UI inmediatamente con los resultados parciales
-              setItems(final);
-            })
-            .catch(() => {
-              /* ignorar errores individuales */
-            }),
+        // Request all artists in parallel and tolerate individual failures
+        const results = await Promise.all(
+          picks.map((t) => searchReleases(t).catch(() => [])),
         );
 
-        // No esperamos por lotes; esperamos a que terminen todas las promesas para quitar el loading
-        await Promise.all(promises);
+        // Flatten, dedupe and shuffle
+        const flat = results.flat().filter(Boolean) as DiscogsItem[];
+        const unique = dedupeById(flat);
+        const final = shuffle(unique).slice(0, 18);
+
+        setItems(final);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error cargando discos.");
       } finally {
@@ -404,6 +354,31 @@ export default function Discos() {
   };
 
   // Función para guardar los cambios al editar un cliente. Se llama desde la pantalla de edición.
+
+  // renderDiscItem: versión extraída para usar el componente DiscCard
+  const renderDiscItem = ({ item }: { item: DiscogsItem }) => {
+    const { artist, album, imageUrl, year } = getFields(item);
+
+    return (
+      <DiscCard
+        album={album}
+        artist={artist}
+        imageUrl={imageUrl}
+        year={year}
+        colors={colors as any}
+        onRent={() => {
+          router.push({
+            pathname: "/reserva/new",
+            params: {
+              discogsId: String(item.id),
+              title: album,
+              artist,
+            },
+          });
+        }}
+      />
+    );
+  };
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Cabecera superior con el título "Discos" */}
@@ -448,7 +423,7 @@ export default function Discos() {
         <FlatList
           data={items}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={renderItem}
+          renderItem={renderDiscItem}
           style={styles.list}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={

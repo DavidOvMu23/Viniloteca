@@ -1,11 +1,5 @@
 import { supabase } from "../../supabase/supabaseClient";
-
-type ExpoMessage = {
-  to: string;
-  title?: string;
-  body?: string;
-  data?: Record<string, unknown>;
-};
+import type { ExpoMessage } from "src/types";
 
 // Envía un mensaje a todos los tokens Expo almacenados en la tabla `profiles`.
 export async function sendNewClientNotification(fullName: string) {
@@ -74,4 +68,4 @@ export async function sendNewClientNotification(fullName: string) {
   }
 }
 
-export default {};
+// (removed unused default export)

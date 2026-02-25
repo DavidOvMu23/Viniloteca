@@ -2,47 +2,14 @@
 // Controla quién se lleva los discos, cuándo debe devolverlos y si tiene retraso.
 
 import { supabase } from "../../supabase/supabaseClient";
+import {
+  type PedidoEstado,
+  type Pedido,
+  type RentalReservation,
+  type OrderRow,
+} from "src/types";
 
 export const MAX_RENTAL_DAYS = 15; // Máximo días que puedes tener un disco (por que he querido poner un límite, como en una biblioteca)
-
-export type PedidoEstado = "PREPARADO" | "FINALIZADO" | "VENCIDO"; // Declaramos los posibles estados de un alquiler
-
-// Para mostrar en la lista del cliente
-export type Pedido = {
-  id: string;
-  clienteId: string;
-  codigo: string; // Cod de disco
-  fechaInicio: string;
-  fechaFin: string;
-  estado: PedidoEstado;
-};
-
-// Para mostrar en la lista de reservas (con más detalles, como fechas en ISO y operador)
-export type RentalReservation = {
-  id: string;
-  discogsId: number;
-  userId: string;
-  operatorId: string | null;
-  rentedAt: string;
-  dueAt: string;
-  returnedAt: string | null;
-  createdAt: string;
-  status: PedidoEstado;
-  // Indica si la devolución se hizo después de la fecha límite
-  returnedLate: boolean;
-};
-
-// Lo que viene de la BD de forma cruda
-type OrderRow = {
-  id: string;
-  discogs_id: number;
-  user_id: string;
-  operator_id: string | null;
-  rented_at: string;
-  due_at: string | null;
-  returned_at: string | null;
-  created_at: string;
-};
 
 //Funciones para convertir datos de la BD a objetos limpios que usamos en la app
 

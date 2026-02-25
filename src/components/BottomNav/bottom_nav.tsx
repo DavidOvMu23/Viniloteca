@@ -5,19 +5,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 import { useThemePreference } from "src/providers/ThemeProvider";
-
-export type BottomNavItem = {
-  // El nombre del icono (por ejemplo "home", "person", "disc").
-  icon: React.ComponentProps<typeof Ionicons>["name"];
-  // El texto que aparece debajo del icono (por ejemplo "Inicio").
-  label: string;
-  // (Opcional) Función que se ejecuta al pulsar la pestaña.
-  onPress?: () => void;
-  // (Opcional) Si es true, la pestaña se muestra resaltada (la que está seleccionada).
-  active?: boolean;
-  // (Opcional) La ruta a la que navega al pulsarla (por ejemplo "/home").
-  href?: Href;
-};
+import { type BottomNavItem } from "src/types";
 
 interface Props {
   // Lista de pestañas que se mostrarán en la barra (cada una con su icono y texto).
@@ -61,7 +49,7 @@ export default function BottomNav({ items }: Props) {
           // ── Caso 1: la pestaña tiene una ruta href ──
           if (item.href) {
             return (
-              <Link key={item.label} href={item.href} asChild>
+              <Link key={item.label} href={item.href as Href} asChild>
                 <TouchableOpacity activeOpacity={0.7} style={{ flex: 1 }}>
                   {content}
                 </TouchableOpacity>

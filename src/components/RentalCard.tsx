@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { type RentalReservation } from "src/services/orderService";
+import { type RentalReservation } from "src/types";
 
 // Definimos las props que necesita este componente
 interface RentalCardProps {
@@ -175,7 +175,7 @@ export default function RentalCard({
               { backgroundColor: colors.primary, borderColor: colors.border },
             ]}
             onPress={() => {
-              try {
+              const confirmReturn = () => {
                 Alert.alert(
                   "Confirmar devolución",
                   "¿Quieres marcar esta reserva como devuelta?",
@@ -184,10 +184,6 @@ export default function RentalCard({
                     {
                       text: "Confirmar",
                       onPress: () => {
-                        console.log(
-                          "RentalCard: onReturn press",
-                          reservation.id,
-                        );
                         if (typeof onReturn === "function") {
                           void onReturn(reservation.id);
                         } else {
@@ -200,11 +196,9 @@ export default function RentalCard({
                     },
                   ],
                 );
-              } catch (e) {
-                console.error("RentalCard: Alert failed", e);
-                if (typeof onReturn === "function")
-                  void onReturn(reservation.id);
-              }
+              };
+
+              confirmReturn();
             }}
           >
             <Text

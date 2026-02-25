@@ -14,9 +14,8 @@ import {
 import { TextInput } from "react-native-paper";
 import Header from "src/components/Header/header";
 import CustomButton from "src/components/Buttons/button";
-import BottomNav, {
-  type BottomNavItem,
-} from "src/components/BottomNav/bottom_nav";
+import BottomNav from "src/components/BottomNav/bottom_nav";
+import { type BottomNavItem } from "src/types";
 import { useAuth } from "src/providers/AuthProvider";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";

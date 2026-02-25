@@ -20,8 +20,9 @@ import {
   type MD3Theme,
 } from "react-native-paper";
 
+import { type ThemeMode } from "src/types";
+
 // Definimos las opciones de tema que el usuario puede elegir
-export type ThemeMode = "light" | "dark" | "system";
 
 // Clave para guardar la preferencia de tema en de forma persistente
 const THEME_KEY = "@myapp/theme-mode/v1";

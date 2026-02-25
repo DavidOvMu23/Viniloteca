@@ -2,15 +2,12 @@
 
 import { supabase } from "../../supabase/supabaseClient";
 import { sendNewClientNotification } from "./notifications";
-import { type RoleName, type UserProfile } from "../stores/userStore";
-
-// Cuando iniciamos sesión, devolvemos esto:
-export type AuthResult = {
-  user: UserProfile; // La ficha completa del usuario
-};
-
-// Cuando nos registramos, devolvemos esto:
-export type SignUpResult = {};
+import {
+  type RoleName,
+  type UserProfile,
+  type AuthResult,
+  type SignUpResult,
+} from "src/types";
 
 // Funcion para crar un avatar por defecto usando la primera letra del nombre
 function buildDefaultAvatar(name: string) {
