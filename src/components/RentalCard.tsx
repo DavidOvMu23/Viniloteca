@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+// RentalReservation tipo para tipar las props del componente RentalCard.
 import { type RentalReservation } from "src/types";
 
 // Definimos las props que necesita este componente

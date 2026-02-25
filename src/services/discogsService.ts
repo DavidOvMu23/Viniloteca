@@ -1,3 +1,4 @@
+// DiscogsReleaseSummary y DiscogsReleaseDetail para tipar resultados de búsqueda y detalle.
 import { DiscogsReleaseSummary, DiscogsReleaseDetail } from "../types/discogs";
 
 // Declaramos la base de la API

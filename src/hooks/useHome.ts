@@ -3,7 +3,9 @@
 
 import { useCallback, useMemo } from "react";
 import { useRouter } from "expo-router";
+
 import { type BottomNavItem } from "src/types";
+// useUserStore para acceder al usuario y condicionar items según rol.
 import { useUserStore } from "src/stores/userStore";
 
 // Esta es la función principal que exportamos. Es un hook personalizado que prepara todo lo necesario para la pantalla de Inicio.

@@ -1,7 +1,10 @@
 // este archivo maneja la consulta para obtener los pedidos de un cliente dado su ID.
 
+//  useQuery para manejar caché/estado de la petición.
 import { useQuery } from "@tanstack/react-query";
+// getOrdersByClientId servicio que devuelve pedidos de un cliente.
 import { getOrdersByClientId } from "src/services/orderService";
+// ordersByClientQueryKey key para la query específica por cliente.
 import { ordersByClientQueryKey } from "src/hooks/queries/queryKeys";
 
 // esta función es un hook personalizado que utiliza React Query para obtener los pedidos de un cliente por su ID.

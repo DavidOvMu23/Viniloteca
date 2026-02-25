@@ -1,4 +1,10 @@
+//este archivo se encarga de enviar notificaciones push a los dispositivos registrados cada vez que se crea un nuevo cliente.
+// Utiliza la API de Expo para enviar las notificaciones a los tokens almacenados en la base de datos.
+// La función `sendNewClientNotification` es llamada desde el servicio de clientes después de crear un nuevo cliente,
+// y también se puede llamar desde el servicio de autenticación si se crean nuevos usuarios desde allí.
+
 import { supabase } from "../../supabase/supabaseClient";
+// tipo de. ExpoMessage tipo para tipar los mensajes que enviamos via Expo.
 import type { ExpoMessage } from "src/types";
 
 // Envía un mensaje a todos los tokens Expo almacenados en la tabla `profiles`.

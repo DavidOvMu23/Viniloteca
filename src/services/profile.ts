@@ -2,10 +2,18 @@
 // Como cambiar su nombre o subir una foto nueva.
 
 import { supabase } from "../../supabase/supabaseClient";
+// getUserProfileById para obtener datos actualizados de usuario desde auth service.
 import { getUserProfileById } from "./auth";
-import { type UserProfile } from "src/types";
+
+// uploadAvatar helper para subir archivos desde features/storage.
 import { uploadAvatar } from "../features/storage/uploadAvatar";
-import type { UpdateUserNamePayload, UploadAvatarPayload } from "src/types";
+
+// tipos que usaremos de types/index.ts
+import type {
+  UpdateUserNamePayload,
+  UploadAvatarPayload,
+  UserProfile,
+} from "src/types";
 
 // Función para actualizar el nombre del usuario
 export async function updateUserDisplayName({

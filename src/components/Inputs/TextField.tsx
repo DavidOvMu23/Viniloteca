@@ -3,6 +3,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
+// useThemePreference para adaptar el TextField al tema actual.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Definimos las props que acepta el componente TextField. Son todas opcionales excepto value y onChangeText, que son necesarias para controlar el campo.

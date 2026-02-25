@@ -2,6 +2,7 @@
 
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
+// useThemePreference para ajustar apariencia del botón según el tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Definimos las propiedades (props) que nuestro botón va a aceptar. Es como hacer un formulario para saber qué información necesitamos para crear el botón.

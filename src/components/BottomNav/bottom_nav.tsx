@@ -4,7 +4,9 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
+// useThemePreference para ajustar colores de la barra inferior.
 import { useThemePreference } from "src/providers/ThemeProvider";
+// BottomNavItem tipo para definir la forma de los items de navegación.
 import { type BottomNavItem } from "src/types";
 
 interface Props {

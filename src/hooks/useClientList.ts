@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
+// tipo para construir elementos de la barra inferior.
 import { type BottomNavItem } from "src/types";
+// useUserStore para leer permisos/usuario desde el store global.
 import { useUserStore } from "src/stores/userStore";
+// Cliente tipo para tipar la lista de clientes devuelta por la query.
 import { type Cliente } from "src/types";
+// useClientsQuery para obtener la lista de clientes desde servicios.
 import { useClientsQuery } from "src/hooks/queries/useClientsQuery";
 
 // esta funcion se encarga de gestionar la lógica de la pantalla de lista de clientes:

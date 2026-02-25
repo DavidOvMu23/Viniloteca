@@ -2,11 +2,16 @@
 
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+//  Header componente para la cabecera de la pantalla.
 import Header from "src/components/Header/header";
+//  CustomButton botones reutilizables para guardar/cancelar.
 import CustomButton from "src/components/Buttons/button";
+//  BottomNav barra inferior de navegación.
 import BottomNav from "src/components/BottomNav/bottom_nav";
 import { TextInput } from "react-native-paper";
+//  useNewClient hook que encapsula la lógica del formulario de creación.
 import useNewClient from "src/hooks/useNewClient";
+//  useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Este componente es la pantalla para crear un nuevo cliente. Contiene un formulario con campos para el nombre, email, teléfono y NIF del cliente, y botones para guardar o cancelar. Solo los usuarios con rol de administrador pueden acceder a esta pantalla; si un usuario normal intenta entrar, verá un mensaje de restricción y un botón para volver atrás. La pantalla también incluye una cabecera con el título y una barra de navegación inferior. El diseño se adapta al tema claro/oscuro usando los colores del tema activo.

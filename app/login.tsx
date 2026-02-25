@@ -4,13 +4,19 @@
 
 import React from "react";
 import { View, StyleSheet, Text, ActivityIndicator, Image } from "react-native";
+//  TextfieldEmail y TextfieldPassword inputs reutilizables.
 import TextfieldEmail from "../src/hooks/login/Textfield/textfield_email";
 import TextfieldPassword from "../src/hooks/login/Textfield/textfield_password";
+//  TextButton y Button componentes de botón reutilizables.
 import TextButton from "../src/components/Buttons/text_button";
 import Button from "../src/components/Buttons/button";
+//  GoogleButton para autenticación con Google.
 import GoogleButton from "../src/components/Buttons/google_button";
+//  useLogin hook que contiene la lógica de login.
 import useLogin from "../src/hooks/useLogin";
+//  useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+//  useRouter para navegar entre pantallas.
 import { useRouter } from "expo-router";
 
 // La pantalla de login

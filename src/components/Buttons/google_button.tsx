@@ -2,6 +2,7 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+// useThemePreference para adaptar estilos del botón al tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Definimos las props que acepta el componente GoogleButton. En este caso, solo un texto opcional.

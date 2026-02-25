@@ -5,7 +5,9 @@ import React from "react";
 import { useRouter } from "expo-router";
 import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+// useThemePreference para aplicar colores/estilos según preferencia de tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+// Uso: useUserStore para mostrar información del usuario en el header.
 import { useUserStore } from "src/stores/userStore";
 
 // Definimos las props que acepta el componente Header. Son opcionales y tienen valores por defecto.

@@ -1,7 +1,11 @@
 // Aquí tenemos todas las funciones relacionadas con la autenticación
 
+// supabase para operaciones de autenticación/usuarios.
 import { supabase } from "../../supabase/supabaseClient";
+// sendNewClientNotification para notificar tras crear nuevos usuarios desde auth.
 import { sendNewClientNotification } from "./notifications";
+
+//tipos que usaremos de types/index.ts
 import {
   type RoleName,
   type UserProfile,

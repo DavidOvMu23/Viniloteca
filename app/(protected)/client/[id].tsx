@@ -7,10 +7,15 @@
 
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Image } from "react-native";
+//  Header componente de cabecera reutilizable.
 import Header from "src/components/Header/header";
+//  BottomNav barra de navegación inferior.
 import BottomNav from "src/components/BottomNav/bottom_nav";
+//  CustomButton botones reutilizables para editar/eliminar.
 import CustomButton from "src/components/Buttons/button";
+//  useClientDetail hook que obtiene datos del cliente y sus pedidos.
 import useClientDetail from "src/hooks/useClientDetail";
+//  useThemePreference para obtener colores según tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Componente AvatarDisplay: muestra la imagen del cliente o una inicial si no hay imagen.

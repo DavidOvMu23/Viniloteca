@@ -4,12 +4,18 @@ import { useCallback, useMemo, useState, useEffect } from "react";
 import { Alert, Platform } from "react-native";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useLocalSearchParams, useRouter } from "expo-router";
+// useQueryClient para invalidar y refrescar cachés tras operaciones.
 import { useQueryClient } from "@tanstack/react-query";
+// BottomNavItem tipo para construir los items de navegación inferiores.
 import { type BottomNavItem } from "src/types";
+// useUserStore para acceder a usuario/roles y condicionar acciones (p.ej. eliminar).
 import { useUserStore } from "src/stores/userStore";
+// deleteClient para eliminar un cliente desde el servicio.
 import { deleteClient } from "src/services/clientService";
+// useClientQuery y useOrdersByClientQuery hooks personalizados que traen datos del cliente y sus pedidos.
 import { useClientQuery } from "src/hooks/queries/useClientQuery";
 import { useOrdersByClientQuery } from "src/hooks/queries/useOrdersByClientQuery";
+// keys de React Query para invalidar queries relacionadas con clientes.
 import { clientQueryKey, clientsQueryKey } from "src/hooks/queries/queryKeys";
 
 // El hook useClientDetail encapsula toda la lógica necesaria para la pantalla de detalle de un cliente.

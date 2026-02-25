@@ -11,13 +11,21 @@ import {
 } from "react-native";
 import { TextInput } from "react-native-paper";
 import { useRouter } from "expo-router";
+// Header componente de cabecera reutilizable.
 import Header from "src/components/Header/header";
+// BottomNav barra inferior de navegación.
 import BottomNav from "src/components/BottomNav/bottom_nav";
+// BottomNavItem tipo para la lista de pestañas.
 import { type BottomNavItem } from "src/types";
+// useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+// useUserStore para leer usuario y decidir si mostrar pestaña Clientes.
 import { useUserStore } from "src/stores/userStore";
+// CustomButton botones reutilizables.
 import CustomButton from "src/components/Buttons/button";
+// DiscCard componente para mostrar cada disco en los resultados.
 import DiscCard from "src/components/DiscCard/DiscCard";
+// searchReleases servicio que llama a la API de Discogs para búsquedas.
 import { searchReleases } from "src/services/discogsService";
 
 //definimos el tipo de dato que representa un disco que nos devuelve la API de Discogs. Esto nos ayuda a tener autocompletado y a entender qué campos podemos usar.

@@ -1,8 +1,11 @@
 // este Hook le pide a la base de datos los datos de UN solo
 // cliente.
 
+//  useQuery para manejar la petición y caché.
 import { useQuery } from "@tanstack/react-query";
+//  getClientById servicio que obtiene un cliente por su ID.
 import { getClientById } from "src/services/clientService";
+//  clientQueryKey key para identificar la query del cliente.
 import { clientQueryKey } from "src/hooks/queries/queryKeys";
 
 //esta funcion consulta a la base de datos por un cliente específico usando su ID.

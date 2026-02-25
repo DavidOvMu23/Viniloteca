@@ -10,19 +10,30 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+// Header componente de cabecera reutilizable.
 import Header from "src/components/Header/header";
+// BottomNav barra inferior de navegación.
 import BottomNav from "src/components/BottomNav/bottom_nav";
+// BottomNavItem tipo para construir la lista de pestañas.
 import { type BottomNavItem } from "src/types";
+// RentalCard componente que renderiza cada reserva.
 import RentalCard from "src/components/RentalCard";
+// useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+// Notifications para gestionar permisos y recibir notificaciones push.
 import * as Notifications from "expo-notifications";
+// router/params para navegar/leer params desde notificaciones.
 import { useLocalSearchParams, useRouter } from "expo-router";
+// useUserStore para leer el usuario actual desde el store.
 import { useUserStore } from "src/stores/userStore";
+// getReservationsByUserId y markReservationAsReturned servicios para gestionar reservas.
 import {
   getReservationsByUserId,
   markReservationAsReturned,
 } from "src/services/orderService";
+// RentalReservation tipo que describe la forma de las reservas en la app.
 import { type RentalReservation } from "src/types";
+// constantes/utilidades de Expo para notificaciones y detección de dispositivo.
 import Constants from "expo-constants";
 import * as Device from "expo-device";
 

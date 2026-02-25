@@ -1,14 +1,19 @@
-// Creación de tipos para los datos que recibimos de la API de discogs,
-// así será mas facil trabajar con los datos y evitar errores
+// Tipos para los datos recibidos de la API de Discogs.
+// Estos tipos se usan en la capa de servicios y en hooks/components que consumen Discogs.
 
-// Tipo para las imagenes de un release.
+// Imagen de un release (forma mínima usada en la app).
+// Lo uso en:
+// - `src/services/discogsService.ts`: mapeo del detalle (`DiscogsReleaseDetail.images`).
 export type DiscogsImage = {
   type: string;
   uri: string;
   resource_url?: string;
 };
 
-// Tipo para el resumen de un release en los resultados de búsqueda.
+// Resumen de un release en resultados de búsqueda.
+// Lo uso en:
+// - `src/services/discogsService.ts`: resultado de `searchReleases`.
+// - `app/(protected)/reservas.tsx` y hooks que cargan títulos/imágenes por ID.
 export type DiscogsReleaseSummary = {
   id: number;
   title: string;
@@ -21,7 +26,10 @@ export type DiscogsReleaseSummary = {
   style?: string[];
 };
 
-// Tipo para el detalle completo de un release.
+// Detalle completo de un release.
+// Lo uso en:
+// - `src/services/discogsService.ts`: `getReleaseDetail` devuelve este tipo.
+// - Hooks/componentes que muestran información extendida de un disco.
 export type DiscogsReleaseDetail = {
   id: number;
   title: string;

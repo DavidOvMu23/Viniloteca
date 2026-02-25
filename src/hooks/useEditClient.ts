@@ -5,11 +5,17 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { type TextInputProps } from "react-native-paper";
+// useThemePreference para obtener colores y adaptar la UI al tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+// useQueryClient de React Query para invalidar/actualizar caché tras guardar.
 import { useQueryClient } from "@tanstack/react-query";
+// updateClient para enviar los cambios del cliente al servicio.
 import { updateClient } from "src/services/clientService";
+// keys de React Query para invalidar las queries relacionadas con clientes.
 import { clientQueryKey, clientsQueryKey } from "src/hooks/queries/queryKeys";
+// useClientQuery hook para obtener los datos actuales del cliente.
 import { useClientQuery } from "src/hooks/queries/useClientQuery";
+// useUserStore para leer el usuario actual y sus permisos.
 import { useUserStore } from "src/stores/userStore";
 
 // El hook useEditClient encapsula toda la lógica necesaria para la pantalla de edición de clientes

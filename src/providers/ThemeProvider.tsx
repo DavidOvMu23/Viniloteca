@@ -20,6 +20,7 @@ import {
   type MD3Theme,
 } from "react-native-paper";
 
+// ThemeMode tipo para tipar la preferencia de tema almacenada y expuesta por el provider.
 import { type ThemeMode } from "src/types";
 
 // Definimos las opciones de tema que el usuario puede elegir

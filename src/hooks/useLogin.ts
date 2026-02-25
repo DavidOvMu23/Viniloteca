@@ -3,6 +3,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
+// useAuth hook del provider para realizar login y actualizar estado de sesión.
 import { useAuth } from "src/providers/AuthProvider";
 
 // El hook useLogin encapsula toda la lógica relacionada con el formulario de login.

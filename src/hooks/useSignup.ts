@@ -8,6 +8,7 @@ import { useRouter } from "expo-router";
 
 // Importamos la función que habla con el servidor para crear la cuenta.
 // Vive en nuestro archivo de servicios de autenticación.
+// signUpWithEmail para registrar usuarios mediante el servicio de auth.
 import { signUpWithEmail } from "src/services/auth";
 
 // Es la función que exportamos para que la pantalla de registro la use.

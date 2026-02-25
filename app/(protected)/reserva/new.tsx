@@ -10,6 +10,8 @@ import { type BottomNavItem } from "src/types";
 import CustomButton from "src/components/Buttons/button";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
+// createReservation para insertar la reserva en el servicio/DB.
+// MAX_RENTAL_DAYS constante usada para validar la duración máxima.
 import { createReservation, MAX_RENTAL_DAYS } from "src/services/orderService";
 
 //esta función convierte un objeto Date a un string con formato "AAAA-MM-DD", que es el formato que espera el campo de fecha en el formulario. Por ejemplo, si le pasamos new Date(2025, 2, 15) (15 de marzo de 2025), devolverá "2025-03-15". Esto nos ayuda a inicializar los campos de fecha con valores legibles y compatibles con el input.

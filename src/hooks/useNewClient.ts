@@ -2,11 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { Alert } from "react-native";
 import { type TextInputProps } from "react-native-paper";
+//  BottomNavItem tipo para los items de la barra inferior.
 import { type BottomNavItem } from "src/types";
+//  useThemePreference para adaptar colores según tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
+//  useUserStore para leer el usuario y permisos (p.ej. si es admin).
 import { useUserStore } from "src/stores/userStore";
+//  useQueryClient para invalidar cache tras crear cliente.
 import { useQueryClient } from "@tanstack/react-query";
+//  createClient para crear un nuevo cliente en el servicio.
 import { createClient } from "src/services/clientService";
+//  clientsQueryKey key de React Query usada para invalidar lista de clientes.
 import { clientsQueryKey } from "src/hooks/queries/queryKeys";
 
 export default function useNewClient() {

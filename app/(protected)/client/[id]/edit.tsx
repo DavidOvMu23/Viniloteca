@@ -8,10 +8,15 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { TextInput } from "react-native-paper";
+//  SelectRole componente para seleccionar rol (visible a admins).
 import SelectRole from "src/components/Inputs/SelectRole";
+//  Header cabecera reutilizable de la pantalla.
 import Header from "src/components/Header/header";
+//  CustomButton botones reutilizables para guardar/cancelar.
 import CustomButton from "src/components/Buttons/button";
+//  useEditClient hook que encapsula la lógica del formulario de edición.
 import useEditClient from "src/hooks/useEditClient";
+//  useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Función para truncar la ID del cliente a una longitud máxima, agregando "..." al final si es demasiado larga. Esto se usa para mostrar la ID de forma más amigable en la pantalla de edición.

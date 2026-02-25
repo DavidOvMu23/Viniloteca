@@ -6,11 +6,15 @@ import React, { useEffect } from "react";
 import { View, StyleSheet, Text, ActivityIndicator, Image } from "react-native";
 import { TextInput } from "react-native-paper";
 import { useRouter } from "expo-router";
+//  TextfieldEmail y TextfieldPassword componentes reutilizables para los inputs del formulario.
 import TextfieldEmail from "../src/hooks/login/Textfield/textfield_email";
 import TextfieldPassword from "../src/hooks/login/Textfield/textfield_password";
+//  TextButton y Button componentes de botones reutilizables.
 import TextButton from "../src/components/Buttons/text_button";
 import Button from "../src/components/Buttons/button";
+//  useSignup hook que contiene la lógica del formulario (estado, validaciones, submit).
 import useSignup from "../src/hooks/useSignup";
+//  useThemePreference para adaptar colores según el tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // La pantalla de registro

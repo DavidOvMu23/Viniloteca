@@ -2,11 +2,17 @@
 
 import React, { useMemo } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+//  Header componente de cabecera reutilizable.
 import Header from "src/components/Header/header";
+//  BottomNav barra inferior de navegación.
 import BottomNav from "src/components/BottomNav/bottom_nav";
+//  BottomNavItem tipo para construir la lista de pestañas.
 import { type BottomNavItem } from "src/types";
+//  useUserStore para leer el usuario y decidir si mostrar pestaña Clientes.
 import { useUserStore } from "src/stores/userStore";
+//  useThemePreference para leer y cambiar el tema (setMode).
 import { useThemePreference } from "src/providers/ThemeProvider";
+//  ThemeMode tipo para las opciones de tema disponibles.
 import { type ThemeMode } from "src/types";
 
 export default function Preferences() {

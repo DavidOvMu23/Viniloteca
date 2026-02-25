@@ -4,10 +4,15 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { TextInput } from "react-native-paper";
+//  Header componente reutilizable para la cabecera de la pantalla.
 import Header from "src/components/Header/header";
+//  CustomButton componente de botón reutilizable para cada cliente.
 import CustomButton from "src/components/Buttons/button";
+//  BottomNav componente que muestra la navegación inferior.
 import BottomNav from "src/components/BottomNav/bottom_nav";
+//  useClientList hook que contiene la lógica para obtener y filtrar la lista de clientes.
 import useClientList from "src/hooks/useClientList";
+//  useThemePreference para obtener colores del tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // La función principal del componente Client. Aquí se maneja toda la lógica y se devuelve el JSX que describe cómo se ve la pantalla.

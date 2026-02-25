@@ -6,7 +6,9 @@
 // Por que solo los supervisores pueden ver la lista de clientes y editar su información.
 
 import { supabase } from "../../supabase/supabaseClient";
+// sendNewClientNotification para notificar al crear un cliente nuevo.
 import { sendNewClientNotification } from "./notifications";
+// tipos que usaremos de types/index.ts
 import { type Cliente, type ClientRow } from "src/types";
 
 // Funcion para crar un avatar por defecto usando la primera letra del nombre

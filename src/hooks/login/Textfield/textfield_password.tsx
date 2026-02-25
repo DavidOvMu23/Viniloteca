@@ -1,5 +1,6 @@
 // este archivo define un componente específico para el campo de contraseña en la pantalla de login.
 
+// TextField componente reutilizable para entrada de texto (password).
 import TextField from "src/components/Inputs/TextField";
 
 // Props que recibe el componente TextfieldPassword.

@@ -3,6 +3,7 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
 import { RadioButton, Text } from "react-native-paper";
+// useThemePreference para ajustar el componente al modo de tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Definimos las props que acepta el componente SelectRole. Recibe el valor actual del rol y una función para cambiarlo.

@@ -7,6 +7,7 @@ import {
   GestureResponderEvent, // tipo que describe un toque del dedo
 } from "react-native";
 
+// useThemePreference para adaptar estilos del texto según tema.
 import { useThemePreference } from "src/providers/ThemeProvider";
 
 // Definimos las props que acepta el componente TextButton. Recibe el texto a mostrar y una función para manejar el toque.

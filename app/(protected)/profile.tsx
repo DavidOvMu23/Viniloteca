@@ -19,7 +19,9 @@ import { type BottomNavItem } from "src/types";
 import { useAuth } from "src/providers/AuthProvider";
 import { useThemePreference } from "src/providers/ThemeProvider";
 import { useUserStore } from "src/stores/userStore";
+//  pickImageFromLibrary helper para seleccionar imagen desde galería.
 import { pickImageFromLibrary } from "src/features/storage/pickImage";
+//  updateUserDisplayName y uploadUserAvatar servicios para actualizar nombre y avatar.
 import { updateUserDisplayName, uploadUserAvatar } from "src/services/profile";
 
 // este archivo define la pantalla de perfil, donde el usuario puede ver y editar su información personal (nombre, foto de perfil) y cerrar sesión. Es una pantalla protegida, solo accesible para usuarios logueados.
