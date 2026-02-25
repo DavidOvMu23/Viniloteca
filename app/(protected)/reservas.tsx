@@ -100,20 +100,37 @@ async function loadDiscogsSummariesByIds(
 }> {
   // Eliminamos IDs repetidos para no hacer peticiones de más.
   // Mostrar token en UI para depuración (puedes quitar esto en producción)
-  try {
-    Alert.alert("Expo Push Token", tokenData.data);
-  } catch {}
   const uniqueIds = Array.from(new Set(discogsIds));
+
+  // Limitar para evitar hacer demasiadas peticiones al cargar montones de reservas
+  const MAX_IDS = 60;
+  const ids = uniqueIds.slice(0, MAX_IDS);
 
   // Diccionarios vacíos que iremos rellenando.
   const imageMap: Record<number, string | null> = {};
   const titleMap: Record<number, string | null> = {};
 
-  // Pedimos los datos de cada disco uno a uno.
-  for (const discogsId of uniqueIds) {
-    const summary = await fetchDiscogsReleaseSummary(discogsId, token);
-    imageMap[discogsId] = summary.imageUrl;
-    titleMap[discogsId] = summary.title;
+  // Hacemos peticiones en paralelo con concurrencia limitada para no saturar la red
+  const CONCURRENCY = 6;
+  const chunks: number[][] = [];
+  for (let i = 0; i < ids.length; i += CONCURRENCY) {
+    chunks.push(ids.slice(i, i + CONCURRENCY));
+  }
+
+  for (const chunk of chunks) {
+    // Ejecutamos el lote en paralelo
+    await Promise.all(
+      chunk.map(async (discogsId) => {
+        try {
+          const summary = await fetchDiscogsReleaseSummary(discogsId, token);
+          imageMap[discogsId] = summary.imageUrl;
+          titleMap[discogsId] = summary.title;
+        } catch {
+          imageMap[discogsId] = null;
+          titleMap[discogsId] = null;
+        }
+      }),
+    );
   }
 
   return { imageMap, titleMap };
