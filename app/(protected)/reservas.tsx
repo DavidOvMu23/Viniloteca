@@ -31,6 +31,13 @@ import {
   getReservationsByUserId,
   markReservationAsReturned,
 } from "src/services/orderService";
+// Caché en memoria para evitar recargas repetidas durante la sesión
+import {
+  getCacheForUser,
+  setCacheForUser,
+  updateReservationInCache,
+  setImagesAndTitlesForUser,
+} from "src/stores/reservationCache";
 // RentalReservation tipo que describe la forma de las reservas en la app.
 import { type RentalReservation } from "src/types";
 // constantes/utilidades de Expo para notificaciones y detección de dispositivo.
@@ -268,6 +275,24 @@ export default function Reservas() {
     let active = true;
 
     const load = async () => {
+      // Primero intentamos leer del caché en memoria: si existe, usamos esos datos
+      // para las imágenes/títulos aunque la lista de reservas esté vacía,
+      // así no perdemos las miniaturas mientras forzamos la recarga de reservas.
+      const cached = getCacheForUser(user.id);
+      if (cached) {
+        if (cached.reservas && cached.reservas.length > 0) {
+          setReservas(cached.reservas);
+          // Si ya tenemos reservas en caché, no forzamos petición remota.
+          if (cached.images) setImages(cached.images);
+          if (cached.titles) setTitles(cached.titles);
+          return;
+        }
+        // Si hay cache pero sin reservas, aprovechamos para restaurar
+        // imágenes/títulos y continuar para pedir las reservas al servidor.
+        if (cached.images) setImages(cached.images);
+        if (cached.titles) setTitles(cached.titles);
+      }
+
       try {
         // Activamos la ruedita de carga y limpiamos errores previos.
         setLoading(true);
@@ -278,6 +303,8 @@ export default function Reservas() {
 
         // Solo actualizamos si el componente sigue montado.
         if (active) setReservas(data);
+        // Guardamos en caché en memoria para futuras visitas a esta pantalla
+        setCacheForUser(user.id, data);
       } catch (err) {
         // Si hay error, guardamos un mensaje legible.
         if (active) {
@@ -337,6 +364,14 @@ export default function Reservas() {
       // Actualizamos el estado mezclando lo nuevo con lo viejo
       setImages((prev) => ({ ...prev, ...imageMap }));
       setTitles((prev) => ({ ...prev, ...titleMap }));
+      // También guardamos estas miniaturas en el caché en memoria
+      if (user?.id) {
+        setImagesAndTitlesForUser(
+          user.id,
+          { ...(images ?? {}), ...imageMap },
+          { ...(titles ?? {}), ...titleMap },
+        );
+      }
     };
 
     void loadImages();
@@ -376,8 +411,10 @@ export default function Reservas() {
           void (async () => {
             try {
               setLoading(true);
+              // Forzamos recarga remota y actualizamos caché
               const data = await getReservationsByUserId(user.id);
               setReservas(data);
+              setCacheForUser(user.id, data, images, titles);
             } catch {
               // no hacemos nada aquí, la UI ya maneja errores en la carga inicial
             } finally {
@@ -427,6 +464,9 @@ export default function Reservas() {
       setReservas((prev) =>
         prev.map((item) => (item.id === reservationId ? updated : item)),
       );
+
+      // Actualizamos también el caché en memoria para mantener consistencia
+      updateReservationInCache(user?.id, updated);
 
       // Mostramos un mensaje de éxito al usuario.
       Alert.alert(

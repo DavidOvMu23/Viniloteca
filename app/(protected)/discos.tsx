@@ -37,6 +37,76 @@ type DiscogsItem = {
   cover_image?: string;
 };
 
+// Constantes reutilizables para búsquedas aleatorias y placeholders.
+const POPULAR_ARTISTS = [
+  "Bruno Mars",
+  "The Weeknd",
+  "Bad Bunny",
+  "Taylor Swift",
+  "Rihanna",
+  "Justin Bieber",
+  "Lady Gaga",
+  "Coldplay",
+  "Billy Eilish",
+  "Drake",
+  "Ariana Grande",
+  "Ed Sheeran",
+  "David Guetta",
+  "J Balvin",
+  "Shakira",
+  "Kendrick Lamar",
+  "Eminem",
+  "Maroon 5",
+  "SZA",
+  "Calvin Harris",
+  "Kanye West",
+  "Harry Styles",
+  "Pitbull",
+  "Sabrina Carpenter",
+  "Sia",
+  "Dua Lipa",
+  "Post Malone",
+  "Lana Del Rey",
+  "Daddy Yankee",
+  "Katy Perry",
+  "Chris Brown",
+  "Travis Scott",
+  "Olivia Rodrigo",
+  "Michael Jackson",
+  "Doja Cat",
+  "Adele",
+  "Black eyes peas",
+  "Imagine Dragons",
+  "Red Hot Chili Peppers",
+  "Metallica",
+  "Nirvana",
+  "Queen",
+  "The Beatles",
+  "Led Zeppelin",
+  "Pink Floyd",
+  "Radiohead",
+  "U2",
+  "The Rolling Stones",
+  "Gorillaz",
+  "Linkin Park",
+  "Iron Maiden",
+  "Green Day",
+  "Aerosmith",
+  "Pearl Jam",
+  "Amon Amarth",
+];
+
+const ALBUM_SUFFIXES = [
+  "Thriller",
+  "Greatest Hits",
+  "Live",
+  "Deluxe",
+  "Collection",
+  "EP",
+  "Single",
+  "Remastered",
+];
+
 // La función principal del componente Discos. Aquí definimos toda la lógica y el diseño de la pantalla de búsqueda de discos.
 export default function Discos() {
   const router = useRouter();
@@ -129,64 +199,11 @@ export default function Discos() {
     // Si ya hay items o hay una búsqueda activa, no cargamos aleatorios.
     if (items.length > 0 || loading) return;
 
-    const popular = [
-      "Bruno Mars",
-      "The Weeknd",
-      "Bad Bunny",
-      "Taylor Swift",
-      "Rihanna",
-      "Justin Bieber",
-      "Lady Gaga",
-      "Coldplay",
-      "Billy Eilish",
-      "Drake",
-      "Ariana Grande",
-      "Ed Sheeran",
-      "David Guetta",
-      "J Balvin",
-      "Shakira",
-      "Kendrick Lamar",
-      "Eminem",
-      "Maroon 5",
-      "SZA",
-      "Calvin Harris",
-      "Kanye West",
-      "Harry Styles",
-      "Pitbull",
-      "Sabrina Carpenter",
-      "Sia",
-      "Dua Lipa",
-      "Post Malone",
-      "Lana Del Rey",
-      "Daddy Yankee",
-      "Katy Perry",
-      "Chris Brown",
-      "Travis Scott",
-      "Olivia Rodrigo",
-      "Michael Jackson",
-      "Doja Cat",
-      "Adele",
-      "Black eyes peas",
-      "Imagine Dragons",
-      "Red Hot Chili Peppers",
-      "Metallica",
-      "Nirvana",
-      "Queen",
-      "The Beatles",
-      "Led Zeppelin",
-      "Pink Floyd",
-      "Radiohead",
-      "U2",
-      "The Rolling Stones",
-      "Gorillaz",
-      "Linkin Park",
-      "Iron Maiden",
-      "Green Day",
-      "Iron Maiden",
-      "Aerosmith",
-      "Pearl Jam",
-      "Amon Amarth",
-    ];
+    const popular = [...POPULAR_ARTISTS];
+
+    // Placeholder pool: usamos los mismos nombres populares para generar
+    // placeholders de ejemplo que cambian aleatoriamente.
+    const albumSuffixes = [...ALBUM_SUFFIXES];
 
     // Utilitarios pequeños para mantener la función principal limpia
     const shuffle = <T,>(arr: T[]) => {
@@ -247,6 +264,27 @@ export default function Discos() {
     fetchRandomMix();
     // Solo en el montaje
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Placeholder dinámico que rota entre ejemplos basados en la lista `popular`.
+  const [placeholder, setPlaceholder] = React.useState(
+    "Ej. Michael Jackson Thriller",
+  );
+
+  React.useEffect(() => {
+    // Reuse shared constants for pool and albums to avoid duplication.
+    const pool = [...POPULAR_ARTISTS];
+    const albums = [...ALBUM_SUFFIXES];
+
+    const pick = () => {
+      const a = pool[Math.floor(Math.random() * pool.length)];
+      const b = albums[Math.floor(Math.random() * albums.length)];
+      setPlaceholder(`Ej. ${a} ${b}`);
+    };
+
+    pick();
+    const id = setInterval(pick, 5000);
+    return () => clearInterval(id);
   }, []);
 
   // Función para obtener los campos que necesitamos de los discos
@@ -407,7 +445,7 @@ export default function Discos() {
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={handleSearch}
-          placeholder="Ej. Michael Jackson Thriller"
+          placeholder={placeholder}
           outlineStyle={{ borderRadius: 12 }}
           style={[styles.input, { backgroundColor: colors.surface }]}
         />

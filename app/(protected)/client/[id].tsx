@@ -22,6 +22,8 @@ import { useThemePreference } from "src/providers/ThemeProvider";
 function AvatarDisplay({ client }: { client: any }) {
   const [errored, setErrored] = useState(false);
 
+  const { colors } = useThemePreference();
+
   const initial = (client?.full_name ?? client?.email ?? "")
     .trim()
     .charAt(0)
@@ -30,8 +32,12 @@ function AvatarDisplay({ client }: { client: any }) {
   // Si no hay URL o hubo error, mostramos la inicial en un círculo
   if (!client?.avatar_url || errored) {
     return (
-      <View style={styles.avatarPlaceholder}>
-        <Text style={styles.avatarInitial}>{initial || "U"}</Text>
+      <View
+        style={[styles.avatarPlaceholder, { backgroundColor: colors.surface }]}
+      >
+        <Text style={[styles.avatarInitial, { color: colors.text }]}>
+          {initial || "U"}
+        </Text>
       </View>
     );
   }
@@ -71,7 +77,9 @@ export default function ClientDetail() {
         <Header name="Cliente" />
         {/* Zona centrada con el mensaje de carga */}
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Cargando cliente...</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Cargando cliente...
+          </Text>
         </View>
         {/* Barra de navegación inferior */}
         <BottomNav items={navItems} />
@@ -88,10 +96,12 @@ export default function ClientDetail() {
         <Header name="Cliente" />
         {/* Zona centrada con mensaje de error */}
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No se pudo cargar el cliente</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            No se pudo cargar el cliente
+          </Text>
           {/* Si el error es un objeto Error mostramos su mensaje;
               si no, mostramos un texto genérico */}
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
             {error instanceof Error
               ? error.message
               : "Revisa la conexión y vuelve a intentarlo."}
@@ -112,8 +122,10 @@ export default function ClientDetail() {
         <Header name="Cliente" />
         {/* Zona centrada con mensaje de "no encontrado" */}
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Cliente no encontrado</Text>
-          <Text style={styles.emptyText}>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>
+            Cliente no encontrado
+          </Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>
             Revisa la lista y vuelve a intentarlo.
           </Text>
         </View>
@@ -143,7 +155,7 @@ export default function ClientDetail() {
         {canDelete ? (
           <CustomButton text="Eliminar cliente" onPress={handleDelete} />
         ) : (
-          <Text style={styles.notice}>
+          <Text style={[styles.notice, { color: colors.muted }]}>
             Solo los administradores pueden eliminar.
           </Text>
         )}
@@ -165,10 +177,12 @@ export default function ClientDetail() {
           ]}
         >
           {/* Título de la sección */}
-          <Text style={styles.sectionTitle}>Datos del cliente</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Datos del cliente
+          </Text>
 
           {/* Línea horizontal separadora */}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {/* Contenedor principal de datos (Nombre/Email + Avatar) */}
           <View style={styles.dataContainer}>
@@ -176,16 +190,22 @@ export default function ClientDetail() {
             <View style={styles.infoColumn}>
               {/* Fila: Nombre del cliente */}
               <View style={styles.row}>
-                <Text style={styles.label}>Nombre</Text>
-                <Text style={styles.value}>
+                <Text style={[styles.label, { color: colors.muted }]}>
+                  Nombre
+                </Text>
+                <Text style={[styles.value, { color: colors.text }]}>
                   {client.full_name?.trim() || "Cliente sin nombre"}
                 </Text>
               </View>
 
               {/* Fila: Email del cliente */}
               <View style={styles.row}>
-                <Text style={styles.label}>Email</Text>
-                <Text style={styles.value}>{client.email ?? "Sin email"}</Text>
+                <Text style={[styles.label, { color: colors.muted }]}>
+                  Email
+                </Text>
+                <Text style={[styles.value, { color: colors.text }]}>
+                  {client.email ?? "Sin email"}
+                </Text>
               </View>
             </View>
 
@@ -211,6 +231,12 @@ export default function ClientDetail() {
                   client.role === "SUPERVISOR"
                     ? styles.roleBadgeTextSupervisor
                     : styles.roleBadgeTextNormal,
+                  {
+                    color:
+                      client.role === "SUPERVISOR"
+                        ? colors.contrastText
+                        : "#111827",
+                  },
                 ]}
               >
                 {client.role ?? "NORMAL"}
@@ -235,19 +261,23 @@ export default function ClientDetail() {
         >
           {/* Cabecera de la sección: título + cuántos pedidos hay */}
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Últimos pedidos</Text>
-            <Text style={styles.sectionHint}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Últimos pedidos
+            </Text>
+            <Text style={[styles.sectionHint, { color: colors.muted }]}>
               {pedidosCliente.length} en total
             </Text>
           </View>
 
           {/* Línea horizontal separadora */}
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           {/* Si no hay pedidos, mostramos un texto informativo.
               Si hay pedidos, los recorremos uno a uno con .map() */}
           {pedidosCliente.length === 0 ? (
-            <Text style={styles.emptyText}>Sin pedidos registrados.</Text>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>
+              Sin pedidos registrados.
+            </Text>
           ) : (
             // -- Recorremos la lista de pedidos que nos dio el hook
             //    y por cada uno creamos una fila visual con:
@@ -268,12 +298,14 @@ export default function ClientDetail() {
                       const title =
                         discogsId && titleMap ? titleMap[discogsId] : null;
                       return (
-                        <Text style={styles.pedidoCode}>
+                        <Text
+                          style={[styles.pedidoCode, { color: colors.text }]}
+                        >
                           {title ? title : pedido.codigo}
                         </Text>
                       );
                     })()}
-                    <Text style={styles.pedidoDates}>
+                    <Text style={[styles.pedidoDates, { color: colors.muted }]}>
                       {pedido.fechaInicio} · {pedido.fechaFin}
                     </Text>
                   </View>
@@ -281,7 +313,9 @@ export default function ClientDetail() {
                   <View
                     style={[styles.statusPill, statusPillStyle(pedido.estado)]}
                   >
-                    <Text style={styles.statusText}>{pedido.estado}</Text>
+                    <Text style={[styles.statusText, { color: "#111827" }]}>
+                      {pedido.estado}
+                    </Text>
                   </View>
                 </View>
               );

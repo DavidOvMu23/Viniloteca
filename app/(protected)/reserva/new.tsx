@@ -13,6 +13,11 @@ import { useUserStore } from "src/stores/userStore";
 // createReservation para insertar la reserva en el servicio/DB.
 // MAX_RENTAL_DAYS constante usada para validar la duración máxima.
 import { createReservation, MAX_RENTAL_DAYS } from "src/services/orderService";
+import {
+  getCacheForUser,
+  setCacheForUser,
+  clearCacheForUser,
+} from "src/stores/reservationCache";
 
 //esta función convierte un objeto Date a un string con formato "AAAA-MM-DD", que es el formato que espera el campo de fecha en el formulario. Por ejemplo, si le pasamos new Date(2025, 2, 15) (15 de marzo de 2025), devolverá "2025-03-15". Esto nos ayuda a inicializar los campos de fecha con valores legibles y compatibles con el input.
 function toDateInputValue(value: Date): string {
@@ -199,7 +204,7 @@ export default function NewReservation() {
     try {
       setSaving(true);
 
-      await createReservation({
+      const created = await createReservation({
         discogsId,
         userId: user.id,
         // Si el usuario es admin, se registra como operador.
@@ -207,6 +212,22 @@ export default function NewReservation() {
         rentedAt: rentedDate.toISOString(),
         dueAt: dueDate.toISOString(),
       });
+
+      // Preserve cached images/titles but clear reservas list so
+      // `/reservas` will refetch the reservations while keeping media.
+      try {
+        const cached = getCacheForUser(user.id);
+        if (cached) {
+          setCacheForUser(user.id, [], cached.images, cached.titles);
+        } else {
+          // no cache present, ensure cleared
+          clearCacheForUser(user.id);
+        }
+      } catch {
+        try {
+          clearCacheForUser(user.id);
+        } catch {}
+      }
 
       // 6. Mostramos confirmación y volvemos a la lista de reservas.
       Alert.alert("Reserva creada", "La reserva se guardó correctamente.");
