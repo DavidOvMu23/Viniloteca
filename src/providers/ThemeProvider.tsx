@@ -32,7 +32,6 @@ const palette = {
     background: "#f9f7f2",
     surface: "#ffffff",
     primary: "#ff6b6b",
-    secondary: "#2ac3a2",
     muted: "#8c8f9a",
     border: "#e7e3da",
     text: "#0f172a",
@@ -42,8 +41,7 @@ const palette = {
   dark: {
     background: "#0c0f14",
     surface: "#111722",
-    primary: "#ff8fa3",
-    secondary: "#34d3b4",
+    primary: "#ff6b6b",
     muted: "#a3adbd",
     border: "#1c2432",
     text: "#e7e9f2",
@@ -125,7 +123,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       colors: {
         ...base.colors,
         primary: colors.primary,
-        secondary: colors.secondary,
         background: colors.background,
         surface: colors.surface,
         outline: colors.border,

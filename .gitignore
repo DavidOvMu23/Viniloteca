@@ -42,4 +42,4 @@ yarn-error.*
 /ios
 /android
 viniloteca-dbd63*
-google-services.json
+google*

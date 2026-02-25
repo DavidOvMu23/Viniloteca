@@ -22,7 +22,7 @@ export async function pickImageFromLibrary() {
     // Abrimos la galería de fotos para que el usuario elija una imagen.
     // Configuramos para que solo pueda elegir fotos, no videos, y que pueda recortar la imagen en un formato cuadrado
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images, // Solo fotos
+      mediaTypes: ["images", "videos"], // Solo fotos y videos
       allowsEditing: true, // Deja recortar (crop)
       aspect: [1, 1], // Recorte cuadrado perfecto (1:1)
       quality: 0.8, // Calidad alta (80%) para que no pese demasiado

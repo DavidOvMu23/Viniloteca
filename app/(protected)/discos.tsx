@@ -1,5 +1,5 @@
 // este es el archivo de la pantalla de DISCOS, donde el usuario puede buscar discos por artista o título y ver los resultados con su portada. Desde aquí también puede ir a alquilar un disco.
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -114,6 +114,182 @@ export default function Discos() {
       setLoading(false);
     }
   };
+
+  // Cargar discos aleatorios por defecto antes de que el usuario haga una búsqueda.
+  // Elegimos una lista de términos/populares y hacemos una búsqueda aleatoria al montar.
+  useEffect(() => {
+    // Si ya hay items o hay una búsqueda activa, no cargamos aleatorios.
+    if (items.length > 0 || loading) return;
+
+    const popular = [
+      "Bruno Mars",
+      "The Weeknd",
+      "Bad Bunny",
+      "Taylor Swift",
+      "Rihanna",
+      "Justin Bieber",
+      "Lady Gaga",
+      "Coldplay",
+      "Billy Eilish",
+      "Drake",
+      "Ariana Grande",
+      "Ed Sheeran",
+      "David Guetta",
+      "J Balvin",
+      "Shakira",
+      "Kendrick Lamar",
+      "Eminem",
+      "Maroon 5",
+      "SZA",
+      "Calvin Harris",
+      "Kanye West",
+      "Harry Styles",
+      "Pitbull",
+      "Sabrina Carpenter",
+      "Sia",
+      "Dua Lipa",
+      "Post Malone",
+      "Lana Del Rey",
+      "Daddy Yankee",
+      "Katy Perry",
+      "Chris Brown",
+      "Travis Scott",
+      "Olivia Rodrigo",
+      "Michael Jackson",
+      "Doja Cat",
+      "Adele",
+      "Black eyes peas",
+      "Imagine Dragons",
+      "Red Hot Chili Peppers",
+      "Metallica",
+      "Nirvana",
+      "Queen",
+      "The Beatles",
+      "Led Zeppelin",
+      "Pink Floyd",
+      "Radiohead",
+      "U2",
+      "The Rolling Stones",
+      "Gorillaz",
+      "Linkin Park",
+      "Iron Maiden",
+      "Green Day",
+      "Iron Maiden",
+      "Aerosmith",
+      "Pearl Jam",
+      "Amon Amarth",
+    ];
+
+    const fetchRandomMix = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Determinar límite seguro según si estamos autenticados
+        const hasToken = Boolean(process.env.EXPO_PUBLIC_DISCOGS_TOKEN);
+        const serverLimit = hasToken ? 60 : 25; // información del servicio
+        // Usamos una fracción segura del límite para evitar acercarnos al cap
+        const safeRequests = Math.max(5, Math.floor(serverLimit * 0.35));
+
+        // Elegimos hasta `safeRequests` artistas al azar (máx 25)
+        const picks: string[] = [];
+        const pool = [...popular];
+        const k = Math.min(25, safeRequests, pool.length);
+        for (let i = 0; i < k && pool.length; i++) {
+          const idx = Math.floor(Math.random() * pool.length);
+          picks.push(pool.splice(idx, 1)[0]);
+        }
+
+        // Lanzamos todas las búsquedas en paralelo y procesamos resultados al llegar (sin esperar lotes)
+        const seen = new Map<number, DiscogsItem>();
+        const perArtist = Math.ceil(18 / Math.max(1, picks.length));
+
+        const promises = picks.map((t) =>
+          searchReleases(t)
+            .then((arr) => {
+              const list = Array.isArray(arr) ? arr.slice() : [];
+              // mezclamos localmente
+              for (let x = list.length - 1; x > 0; x--) {
+                const y = Math.floor(Math.random() * (x + 1));
+                const tmp = list[x];
+                // eslint-disable-next-line no-param-reassign
+                list[x] = list[y];
+                // eslint-disable-next-line no-param-reassign
+                list[y] = tmp;
+              }
+              // añadimos hasta `perArtist` ítems de esta lista al conjunto visto
+              list.slice(0, perArtist).forEach((it: any) => {
+                if (it && it.id && !seen.has(Number(it.id)))
+                  seen.set(Number(it.id), it);
+              });
+
+              // Reconstruimos la lista priorizando diversidad por artista
+              const unique = Array.from(seen.values());
+              const byArtist = new Map<string, DiscogsItem[]>();
+              unique.forEach((u) => {
+                const titleParts = u.title ? u.title.split(" - ") : [""];
+                const artistKey =
+                  titleParts.length > 1 ? titleParts[0].trim() : "";
+                const arr = byArtist.get(artistKey) || [];
+                arr.push(u);
+                byArtist.set(artistKey, arr);
+              });
+
+              const artistKeys = Array.from(byArtist.keys()).filter(
+                (k) => k !== "",
+              );
+              for (let a = artistKeys.length - 1; a > 0; a--) {
+                const j = Math.floor(Math.random() * (a + 1));
+                const tmp = artistKeys[a];
+                // eslint-disable-next-line no-param-reassign
+                artistKeys[a] = artistKeys[j];
+                // eslint-disable-next-line no-param-reassign
+                artistKeys[j] = tmp;
+              }
+
+              const final: DiscogsItem[] = [];
+              for (let a = 0; a < artistKeys.length && final.length < 18; a++) {
+                const listA = byArtist.get(artistKeys[a]) || [];
+                if (listA.length === 0) continue;
+                const pick = listA[Math.floor(Math.random() * listA.length)];
+                final.push(pick);
+              }
+
+              if (final.length < 18) {
+                const leftovers = unique.filter(
+                  (u) => !final.some((f) => f.id === u.id),
+                );
+                for (let l = leftovers.length - 1; l > 0; l--) {
+                  const j = Math.floor(Math.random() * (l + 1));
+                  const tmp = leftovers[l];
+                  // eslint-disable-next-line no-param-reassign
+                  leftovers[l] = leftovers[j];
+                  // eslint-disable-next-line no-param-reassign
+                  leftovers[j] = tmp;
+                }
+                final.push(...leftovers.slice(0, 18 - final.length));
+              }
+
+              // Actualizamos la UI inmediatamente con los resultados parciales
+              setItems(final);
+            })
+            .catch(() => {
+              /* ignorar errores individuales */
+            }),
+        );
+
+        // No esperamos por lotes; esperamos a que terminen todas las promesas para quitar el loading
+        await Promise.all(promises);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error cargando discos.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRandomMix();
+    // Solo en el montaje
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Función para obtener los campos que necesitamos de los discos
   // que devuelve `searchReleases`.
