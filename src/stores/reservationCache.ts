@@ -1,5 +1,4 @@
 // Caché en memoria para reservas y datos de Discogs
-// No persistente: vive mientras la app está abierta.
 
 type CacheEntry = {
   reservas: any[];

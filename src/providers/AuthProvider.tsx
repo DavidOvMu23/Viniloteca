@@ -135,7 +135,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [isBusy, setUser],
   );
 
-  // ── logout — Función para cerrar sesión ───────────────────────────
   // Borra la sesión del almacenamiento local del teléfono y vacía
   // el almacén global (user = null). Así cualquier pantalla que
   // dependa del usuario detectará que ya no hay nadie logueado y
@@ -164,7 +163,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [clearUser, isBusy]);
 
-  // ── value — Objeto que se escribe en la "pizarra" ─────────────────
   // Reunimos todo lo que queremos compartir (estado + funciones) en
   // un solo objeto. useMemo evita recrear este objeto en cada render;
   // solo lo recalcula si alguna de sus dependencias cambia.
@@ -180,16 +178,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [bootstrap, isBusy, login, logout, status, user],
   );
 
-  // ── Renderizado ───────────────────────────────────────────────────
   // Devolvemos el Provider (el "marco") que envuelve a todos los hijos.
   // El atributo "value" es lo que se escribe en la pizarra: cualquier
   // componente hijo que use useAuth() recibirá este objeto.
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// =====================================================================
-// useAuth — Hook personalizado para LEER la pizarra de autenticación
-// =====================================================================
 // Cualquier componente de la app puede llamar a useAuth() para obtener
 // el estado actual (¿hay usuario?, ¿está cargando?) y las funciones
 // de login/logout. Es un atajo cómodo sobre useContext(AuthContext).

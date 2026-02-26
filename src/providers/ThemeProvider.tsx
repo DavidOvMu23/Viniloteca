@@ -171,10 +171,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function useThemePreference() {
   // Leemos la pizarra del contexto de tema
   const ctx = useContext(ThemeContext);
-  // Si no hay nada (undefined), significa que no estamos dentro del Provider
-  if (!ctx) {
-    throw new Error("useThemePreference debe usarse dentro de ThemeProvider");
-  }
+
   // Devolvemos todo el contenido de la pizarra
   return ctx;
 }

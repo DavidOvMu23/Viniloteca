@@ -111,13 +111,6 @@ export default function RentalCard({
 
       {/* ── Columna derecha: Imagen + Botón ── */}
       <View style={styles.cardImageWrapper}>
-        {/* LÓGICA DE CARGA DE IMAGEN:
-            1. Si isLoadingDiscogs es true, estamos buscando la URL -> SPINNER
-            2. Si tenemos imageUrl, mostramos la imagen.
-            2.1 Mientras la imagen descarga -> SPINNER encima o debajo
-            3. Si no hay imageUrl (y no carga discogs) -> Placeholder "No imagen"
-        */}
-
         {isLoadingDiscogs ? (
           <View
             style={[styles.loadingPlaceholder, { borderColor: colors.border }]}
